@@ -1,0 +1,2316 @@
+<!DOCTYPE html>
+<!--
+  ⚠️ 历史存档文件，已过时，仅供追溯设计依据，勿再更新。
+     当前实现以 android/ 下的 Kotlin + Jetpack Compose 原生 App 为准。
+     参见仓库根目录 README.md 与 android/README.md。
+-->
+
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>「小满」情侣备忘录 · 页面原型</title>
+<style>
+:root{
+  --bg:#FBF7F4; --card:#FFFFFF; --line:#EFE7E3; --line-2:#E5DCD8;
+  --ink:#2C2733; --ink-2:#8E8794; --ink-3:#B4AEB9;
+  --accent:#E86A7C; --accent-soft:#FDE7E4; --accent-deep:#C9526A;
+  --her:#EE7C77; --her-soft:#FDEDEA; --her-ink:#B06863;
+  --him:#6E93C8; --him-soft:#EBF2FB; --him-ink:#5A80B8;
+  --gold:#D99A2B; --gold-soft:#FFF6E8; --gold-ink:#B98A38;
+  --ok:#4FA383; --ok-soft:#E7F5EF;
+  --navbg:#FCFAFB;
+  --r-lg:22px; --r-md:18px; --r-sm:14px; --r-xs:10px;
+}
+/* 深色模式（Material 3 dark scheme，基于同一主色生成） */
+body.dark{
+  --bg:#141316; --card:#1E1D22; --line:#2E2C33; --line-2:#3B3943;
+  --ink:#E6E1E5; --ink-2:#A9A3AE; --ink-3:#78727F;
+  --accent:#EFB8C8; --accent-soft:#4A3038; --accent-deep:#F7CAD7;
+  --her:#F5A79E; --her-soft:#3A2726; --her-ink:#E8A79E;
+  --him:#A8C4EC; --him-soft:#242C3C; --him-ink:#9FBADF;
+  --gold:#E3B860; --gold-soft:#3A2F1C; --gold-ink:#D6AC5A;
+  --ok:#7FCCAB; --ok-soft:#1E3229;
+  --q:#C0AECB; --q-soft:#2E2733; --q-ink:#B9A6C6; --q-deep:#D2C0DC;
+  --navbg:#1A191E;
+}
+body.dark{background:#0E0D11;color:var(--ink)}
+body.dark .doc,body.dark .pager button{background:#1E1D22;color:var(--ink);border-color:#2E2C33}
+body.dark .doc p,body.dark .doc li,body.dark .doc td{color:#C9C3CE}
+body.dark .doc th{color:#8E8895}
+body.dark .doc{box-shadow:0 10px 30px rgba(0,0,0,.4)}
+/* 深色模式下需要单独降饱和的区域（日历 / 抽卡 / 标签） */
+body.dark .cal .d.p{background:#5A2B38;color:#F0B8C4}
+body.dark .cal .d.o{background:#3A2C4E;color:#CBB0DC}
+body.dark .cal .d.n{background:transparent;border-color:#7A4452;color:#D89A9A}
+body.dark .actcard{background:linear-gradient(165deg,#33262C 0%,#2C222A 100%);border-color:#453440}
+body.dark .actcard .cap,body.dark .actcard .sub{color:#C39FB2}
+body.dark .actcard .txt{color:#F0D0DC}
+body.dark .draw{background:linear-gradient(165deg,#33262C 0%,#2A2029 100%);border-color:#453440}
+body.dark .draw .txt{color:#F0D0DC}
+body.dark .draw .cap,body.dark .dlv{color:#C39FB2}
+body.dark .tagc{background:#2A2830;color:#A9A3AE}
+body.dark .lv1{background:#5E8A71}body.dark .lv2{background:#A9763F}
+body.dark .lv3{background:#A85563}body.dark .lv4{background:#8F3E48}body.dark .lv5{background:#7A2B38}
+body.dark .iconm{background:#2A2830}
+body.dark .pbar{background:#2A2830}
+body.dark .seg{background:#2A2830}
+body.dark .stat div,body.dark .qstat div{background:var(--card)}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Noto Sans SC","Source Han Sans CN",sans-serif;
+  background:#F2EDE9; color:var(--ink); padding:28px 20px 60px;
+}
+.stage{max-width:1180px;margin:0 auto}
+
+/* ── 顶部页面切换 ── */
+.pager{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:22px}
+.pager button{
+  border:1px solid var(--line-2); background:var(--card); color:var(--ink-2);
+  padding:8px 15px; border-radius:999px; font-size:13px; cursor:pointer;
+  font-family:inherit; transition:.16s;
+}
+.pager button:hover{border-color:var(--accent);color:var(--accent)}
+.pager button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.pglabel{font-size:11px;color:var(--ink-3);align-self:center;margin:0 2px 0 8px;letter-spacing:.5px}
+.pglabel::after{content:'·';margin-left:6px;color:var(--line-2)}
+.groupbar{font-size:11px;color:var(--ink-3);font-weight:600;letter-spacing:1px;margin:10px 0 2px;padding-left:2px}
+.groupbar:first-of-type{margin-top:4px}
+
+.viewport{display:flex;justify-content:center}
+.phone{
+  width:390px;height:844px;background:var(--bg);border-radius:44px;
+  overflow:hidden;position:relative;
+  box-shadow:0 24px 60px rgba(60,40,45,.22),0 2px 0 rgba(255,255,255,.9) inset;
+  border:8px solid #2C2733;
+}
+.screen{display:none;flex-direction:column;width:100%;height:100%}
+.screen.on{display:flex}
+
+/* ── 状态栏 ── */
+/* 状态栏：Android 规范 24dp（非 iOS 62px），适配挖孔屏 */
+.statusbar{height:24px;flex:0 0 24px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;font-size:12px;font-weight:600;letter-spacing:.2px;color:var(--ink)}
+.sb-icons{display:flex;align-items:center;gap:5px}
+.sb-icons svg{display:block}
+
+/* ── 内容区 ── */
+.content{flex:1;overflow-y:auto;padding:14px 20px 20px;display:flex;flex-direction:column;gap:16px}
+.content::-webkit-scrollbar{width:0}
+.hd{display:flex;align-items:center;justify-content:space-between}
+.hd h1{font-size:22px;font-weight:700;letter-spacing:-.2px}
+.hd .sub{font-size:12px;color:var(--ink-2);margin-top:4px}
+.sect{display:flex;align-items:center;justify-content:space-between;margin-top:2px}
+.sect h2{font-size:15px;font-weight:700}
+.sect span{font-size:12px;color:var(--ink-2)}
+
+/* 头像 */
+.pair{position:relative;width:56px;height:34px}
+.av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:500;position:absolute;top:1px}
+.av.a{left:0;background:var(--her)}
+.av.b{left:24px;background:var(--him);box-shadow:0 0 0 2px var(--bg)}
+
+/* 速记条 */
+.quick{background:var(--card);border-radius:var(--r-lg);padding:12px;display:flex;gap:10px;align-items:center;box-shadow:0 4px 14px rgba(150,110,110,.07)}
+.quick input{flex:1;border:0;outline:0;font-size:14px;font-family:inherit;background:transparent;color:var(--ink)}
+.quick input::placeholder{color:var(--ink-3)}
+.quick .go{width:44px;height:34px;border-radius:12px;background:var(--accent);color:#fff;border:0;font-size:13px;font-family:inherit;cursor:pointer;flex:0 0 44px}
+.quick .go:active{background:var(--accent-deep)}
+
+/* 卡片 */
+.card{background:var(--card);border-radius:var(--r-lg);padding:16px}
+.card.tint-her{background:var(--her-soft)}
+.card.tint-him{background:var(--him-soft)}
+.card.tint-gold{background:var(--gold-soft)}
+
+/* 共同待办 */
+.todo{display:flex;align-items:flex-start;gap:11px;padding:11px 0;border-bottom:1px solid var(--line)}
+.todo:last-child{border-bottom:0;padding-bottom:0}
+.todo:first-of-type{padding-top:4px}
+.tick{width:22px;height:22px;border-radius:7px;border:1.6px solid var(--line-2);flex:0 0 22px;margin-top:1px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;background:var(--card)}
+.tick:hover{border-color:var(--accent)}
+.tick.on{background:var(--ok);border-color:var(--ok)}
+.tick.on svg{display:block}
+.tick svg{display:none}
+.todo .tx{flex:1;font-size:14px;line-height:20px}
+.todo.done .tx{color:var(--ink-3);text-decoration:line-through}
+.todo .who{font-size:11px;margin-top:3px;display:flex;align-items:center;gap:5px;color:var(--ink-3)}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+.dot.her{background:var(--her)}
+.dot.him{background:var(--him)}
+
+/* 备忘便签列表 */
+.memo{background:var(--card);border-radius:var(--r-md);padding:13px 14px;display:flex;gap:12px;position:relative;overflow:hidden}
+.memo .bar{width:4px;flex:0 0 4px;border-radius:4px}
+.memo .bar.her{background:var(--her)}
+.memo .bar.him{background:var(--him)}
+.memo .bd{flex:1;min-width:0}
+.memo .t1{font-size:14px;line-height:20px;margin-bottom:7px}
+.memo .mt{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tag{font-size:11px;padding:3px 8px;border-radius:8px;background:#F5F0EE;color:var(--ink-2)}
+.tag.life{background:var(--ok-soft);color:#337A5F}
+.tag.idea{background:var(--gold-soft);color:var(--gold-ink)}
+.tag.plan{background:var(--him-soft);color:var(--him-ink)}
+.tag.todo{background:var(--accent-soft);color:var(--accent-deep)}
+.time{font-size:11px;color:var(--ink-3);margin-left:auto}
+
+/* 清单 */
+.listcard{background:var(--card);border-radius:var(--r-lg);padding:15px}
+.listcard .lh{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.listcard .lh b{font-size:15px;font-weight:700}
+.listcard .lh em{font-style:normal;font-size:12px;color:var(--ink-2)}
+.pbar{height:6px;border-radius:6px;background:#F2ECEA;overflow:hidden;margin:8px 0 6px}
+.pbar i{display:block;height:100%;border-radius:6px;background:var(--accent)}
+.pbar i.full{background:var(--ok)}
+.item{display:flex;align-items:center;gap:11px;padding:9px 0;font-size:14px}
+.item.done span{color:var(--ink-3);text-decoration:line-through}
+.item .who{margin-left:auto}
+
+/* 搜索 / 筛选 */
+.search{background:var(--card);border-radius:var(--r-md);padding:11px 14px;display:flex;gap:9px;align-items:center;color:var(--ink-3);font-size:14px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+.chips::-webkit-scrollbar{height:0}
+.chip{border:1px solid var(--line-2);background:var(--card);border-radius:999px;padding:7px 13px;font-size:12px;color:var(--ink-2);cursor:pointer;white-space:nowrap;font-family:inherit;transition:.15s}
+.chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
+
+/* 新建 */
+.sheet{background:var(--card);border-radius:var(--r-lg);padding:16px}
+.bigin{width:100%;border:0;outline:0;resize:none;font-family:inherit;font-size:15px;line-height:24px;color:var(--ink);min-height:132px}
+.rowline{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--line);font-size:14px}
+.rowline:last-child{border-bottom:0}
+.sw{width:44px;height:26px;border-radius:999px;background:#E8DFDC;position:relative;cursor:pointer;transition:.18s;flex:0 0 44px}
+.sw i{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--card);transition:.18s}
+.sw.on{background:var(--accent)}
+.sw.on i{left:21px}
+.seg{display:flex;background:#F5F0EE;border-radius:12px;padding:3px;gap:3px}
+.seg button{border:0;background:transparent;font-family:inherit;font-size:12px;padding:6px 12px;border-radius:9px;color:var(--ink-2);cursor:pointer}
+.seg button.on{background:var(--card);color:var(--accent);font-weight:600}
+.bigbtn{height:50px;border-radius:16px;background:var(--accent);color:#fff;border:0;font-size:15px;font-weight:600;font-family:inherit;width:100%;cursor:pointer}
+
+/* 约定 */
+.plan{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--line)}
+.plan:last-child{border-bottom:0;padding-bottom:0}
+.plan .when{width:52px;flex:0 0 52px;text-align:center;background:#F7F2F0;border-radius:12px;padding:7px 0}
+.plan .when b{display:block;font-size:16px;font-weight:700;line-height:1.1}
+.plan .when em{font-style:normal;font-size:10px;color:var(--ink-2)}
+.plan .bd b{font-size:14px;font-weight:600;display:block;margin-bottom:4px}
+.plan .bd p{font-size:12px;color:var(--ink-2)}
+.cd{font-size:11px;color:var(--accent);background:var(--accent-soft);border-radius:8px;padding:3px 8px;display:inline-block;margin-top:6px}
+
+/* 我们 */
+.stat{display:flex;gap:10px}
+.stat div{flex:1;background:var(--card);border-radius:var(--r-md);padding:13px 8px;text-align:center}
+.stat b{display:block;font-size:20px;font-weight:700;color:var(--accent)}
+.stat span{font-size:11px;color:var(--ink-2)}
+.setrow{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--line);font-size:14px;cursor:pointer}
+.setrow:last-child{border-bottom:0}
+.setrow .ar{margin-left:auto;color:var(--ink-3)}
+
+/* 详情 */
+.detail-h{display:flex;align-items:center;justify-content:space-between}
+.iconbtn{width:34px;height:34px;border-radius:17px;background:var(--card);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px}
+.quote{font-size:15px;line-height:26px;background:var(--card);border-radius:var(--r-lg);padding:18px}
+.author{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-2)}
+.author .av{position:static;width:24px;height:24px;font-size:11px}
+.acts{display:flex;gap:10px;margin-top:auto;padding-top:10px}
+.acts button{flex:1;height:44px;border-radius:14px;border:1px solid var(--line-2);background:var(--card);font-family:inherit;font-size:14px;color:var(--ink);cursor:pointer}
+.acts button.pri{background:var(--accent);color:#fff;border:0}
+
+/* ── 雨过模块 ── */
+:root{--q:#9B8AA6;--q-soft:#F3EFF7;--q-ink:#7A6B85;--q-deep:#6B5A77}
+.qstat{display:flex;gap:10px}
+.qstat div{flex:1;background:var(--card);border-radius:var(--r-md);padding:13px 8px;text-align:center}
+.qstat b{display:block;font-size:19px;font-weight:700;color:var(--q-deep)}
+.qstat span{font-size:11px;color:var(--ink-2)}
+.qcard{background:var(--card);border-radius:var(--r-lg);padding:14px 15px;border-left:4px solid var(--q)}
+.qcard .qt{font-size:14px;line-height:20px;margin-bottom:8px}
+.qcard.resolved{border-left-color:var(--ok)}
+.qrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--ink-2)}
+.qbadge{font-size:11px;padding:3px 8px;border-radius:8px;background:var(--q-soft);color:var(--q-deep)}
+.qbadge.me{background:#FCE9EF;color:#B85F73}
+.qbadge.ta{background:#E9EFF8;color:#5A7CA8}
+.qbadge.both{background:var(--q-soft);color:var(--q-deep)}
+.qbadge.ok{background:var(--ok-soft);color:#337A5F}
+.qbadge.wait{background:#FDEEE7;color:#C77A3E}
+.pact{font-size:12px;color:var(--q-deep);background:var(--q-soft);border-radius:8px;padding:5px 9px;margin-top:9px;display:inline-block}
+
+/* 错误方选择 */
+.fault{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fault button{border:1.6px solid var(--line-2);background:var(--card);border-radius:var(--r-md);padding:14px 10px;font-family:inherit;font-size:14px;color:var(--ink-2);cursor:pointer;text-align:left;transition:.15s;display:flex;flex-direction:column;gap:4px}
+.fault button em{font-style:normal;font-size:11px;color:var(--ink-3)}
+.fault button.on{border-color:var(--q);background:var(--q-soft);color:var(--q-deep);font-weight:600}
+.fault button.on em{color:var(--q-ink)}
+
+/* 抽一张（翻篇方式） */
+.draw{height:230px;border-radius:var(--r-lg);background:linear-gradient(165deg,#F7F2F5 0%,#EEE8F2 100%);border:1.5px solid #E6DFEA;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:22px;cursor:pointer;text-align:center}
+.draw.flip{animation:flip .55s ease}
+@keyframes flip{0%{transform:rotateY(0)}45%{transform:rotateY(88deg) scale(.95)}100%{transform:rotateY(0)}}
+.draw .cap{font-size:11px;color:var(--q-ink);letter-spacing:1.4px}
+.draw .txt{font-size:17px;font-weight:700;color:var(--q-deep);line-height:26px}
+.draw .go{font-size:12px;color:var(--q-ink)}
+.pool{display:flex;flex-direction:column;gap:8px;max-height:200px;overflow-y:auto}
+.pool::-webkit-scrollbar{width:0}
+.pool .pi{background:var(--card);border:1px solid var(--line);border-radius:var(--r-sm);padding:10px 12px;font-size:13px;display:flex;gap:8px;align-items:center}
+.pool .pi i{font-style:normal;width:20px;height:20px;border-radius:6px;background:var(--q-soft);color:var(--q-deep);font-size:10px;display:flex;align-items:center;justify-content:center;flex:0 0 20px}
+.lv{font-size:10px;padding:2px 7px;border-radius:6px;color:#fff;flex:0 0 auto}
+.lv1{background:#9FC4AE}.lv2{background:#E3A76B}.lv3{background:#E08672}.lv4{background:#D1624F}.lv5{background:#B23B48}
+.heat{display:flex;gap:7px}
+.heat button{flex:1;height:38px;border-radius:12px;border:1.6px solid var(--line-2);background:var(--card);font-family:inherit;font-size:12px;color:var(--ink-2);cursor:pointer;transition:.15s;padding:0 2px}
+.heat button.on{border-color:transparent;color:#fff;font-weight:600}
+.heat button[data-lv="1"].on{background:#9FC4AE}
+.heat button[data-lv="2"].on{background:#E3A76B}
+.heat button[data-lv="3"].on{background:#E08672}
+.heat button[data-lv="4"].on{background:#D1624F}
+.heat button[data-lv="5"].on{background:#B23B48}
+.heatnote{font-size:12px;color:var(--ink-2);text-align:center;line-height:18px}
+.dlv{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--q-ink)}
+
+/* ── 底部导航：Material 3 Navigation Bar（80dp 贴底，非悬浮胶囊）── */
+.tabbar{flex:0 0 80px;background:var(--navbg);display:flex;align-items:stretch;border-top:1px solid var(--line)}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--ink-2);cursor:pointer;transition:.15s}
+/* 指示器作为容器包住图标：图标在 32dp 胶囊内居中，标签在其下，整体在 80dp 内居中 */
+.tab .ind{width:64px;height:32px;border-radius:16px;background:transparent;display:flex;align-items:center;justify-content:center;transition:background .18s}
+.tab .ind svg{stroke:currentColor;fill:none}
+.tab.on .ind{background:var(--accent-soft)}
+.tab span{font-size:12px;font-weight:500;line-height:16px;letter-spacing:.2px;white-space:nowrap}
+.tab.on{color:var(--accent-deep)}
+.tab.on span{font-weight:700}
+/* 系统导航区（手势导航 22dp） */
+.sysnav{flex:0 0 22px;background:var(--navbg);display:flex;align-items:center;justify-content:center;padding-bottom:6px}
+.sysnav i{display:block;width:134px;height:3px;border-radius:3px;background:var(--ink-3);opacity:.55}
+/* Android 桌面（小部件展示用） */
+.wall{width:100%;height:100%;background:linear-gradient(165deg,#F3E8E4 0%,#E8DCE4 45%,#DCE4EE 100%);display:flex;flex-direction:column;padding:0 16px 16px}
+body.dark .wall{background:linear-gradient(165deg,#221F26 0%,#1C2029 50%,#171A22 100%)}
+.wdgt{background:var(--card);border-radius:16px;padding:12px 14px;box-shadow:0 2px 10px rgba(0,0,0,.10)}
+.wdgt .wt{font-size:11px;color:var(--ink-2);display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.wdgt .wt b{font-size:12px;color:var(--ink);font-weight:700}
+.wdgt .wb{font-size:13px;color:var(--ink);line-height:19px}
+.wdgt .wa{margin-top:9px;display:flex;gap:8px}
+.wdgt .wa button{flex:1;height:32px;border-radius:10px;border:0;background:var(--accent-soft);color:var(--accent-deep);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.wdgt .wa button.solid{background:var(--accent);color:#fff}
+.wrow{display:flex;gap:14px;align-items:center;padding:6px 0;font-size:12px;color:var(--ink)}
+.wrow .tick2{width:16px;height:16px;border-radius:5px;border:1.5px solid var(--line-2);flex:0 0 16px}
+.wrow.done .tick2{background:var(--ok);border-color:var(--ok)}
+.wrow.done span{color:var(--ink-3);text-decoration:line-through}
+.dock{display:flex;gap:20px;justify-content:center;margin-top:auto;padding-top:14px}
+.dock .ic{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:600}
+.shortcut{background:var(--card);border-radius:16px;padding:6px;box-shadow:0 8px 26px rgba(0,0,0,.18);width:190px}
+.shortcut div{padding:11px 13px;font-size:13px;color:var(--ink);display:flex;gap:10px;align-items:center;cursor:pointer}
+.shortcut div:hover{background:var(--accent-soft);border-radius:11px}
+.note{text-align:center;font-size:12px;color:#8A7F86;margin-top:18px}
+
+/* ── 互动 ── */
+.actcard{min-height:190px;border-radius:var(--r-lg);background:linear-gradient(165deg,#FDF3F0 0%,#F6E9F0 100%);border:1.5px solid #F0DDE4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:11px;padding:24px;text-align:center;cursor:pointer}
+.actcard.flip{animation:flip .55s ease}
+.actcard .cap{font-size:11px;color:#B58AA0;letter-spacing:1.4px}
+.actcard .txt{font-size:17px;font-weight:700;color:#8C5F78;line-height:26px}
+.actcard .sub{font-size:11px;color:#B58AA0}
+.actbtns{display:flex;gap:9px}
+.actbtns button{flex:1;height:42px;border-radius:13px;border:1px solid var(--line-2);background:var(--card);font-family:inherit;font-size:13px;color:var(--ink-2);cursor:pointer}
+.actbtns button.on{background:#F6E4EC;border-color:#E7CBD8;color:#8C5F78;font-weight:600}
+.aitem{background:var(--card);border-radius:var(--r-md);padding:12px 13px;display:flex;gap:10px;align-items:flex-start}
+.aitem .t{flex:1;font-size:13px;line-height:19px}
+.aitem .ops{display:flex;gap:6px;flex:0 0 auto}
+.iconm{width:28px;height:28px;border-radius:9px;background:#F7F2F5;display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;flex:0 0 28px}
+.iconm.on{background:#FBE0E7}
+.tagc{font-size:10px;padding:2px 7px;border-radius:6px;background:#F5F0EE;color:var(--ink-2);flex:0 0 auto}
+
+/* ── 周期 ── */
+.phcard{border-radius:var(--r-lg);padding:16px;color:#fff}
+.ph1{background:linear-gradient(150deg,#F09AA6,#E8788A)}
+.ph2{background:linear-gradient(150deg,#9FC4AE,#7FB094)}
+.ph3{background:linear-gradient(150deg,#B79AD1,#9679B4)}
+.ph4{background:linear-gradient(150deg,#E3A76B,#D18B4E)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.cal .w{text-align:center;font-size:10px;color:var(--ink-3);padding-bottom:3px}
+.cal .d{aspect-ratio:1;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:12px;background:var(--card);color:var(--ink)}
+.cal .d.p{background:#FBD9DC;color:#B4545F;font-weight:600}
+.cal .d.o{background:#E9DCF3;color:#7B5F94;font-weight:600}
+.cal .d.n{background:var(--card);border:1.5px dashed #E8C6CD;color:#C88C97}
+.cal .d.today{box-shadow:0 0 0 2px var(--accent)}
+.legend{display:flex;gap:11px;flex-wrap:wrap;font-size:11px;color:var(--ink-2)}
+.legend i{width:10px;height:10px;border-radius:3px;display:inline-block;margin-right:4px}
+.formrow{margin-bottom:14px}
+.formrow label{font-size:12px;color:var(--ink-2);display:block;margin-bottom:7px}
+.formrow input,.formrow textarea{width:100%;border:1px solid var(--line-2);border-radius:12px;padding:11px 12px;font-family:inherit;font-size:14px;color:var(--ink);background:var(--card);outline:0}
+.pick{display:flex;gap:7px;flex-wrap:wrap}
+.pick button{padding:8px 12px;border-radius:11px;border:1px solid var(--line-2);background:var(--card);font-family:inherit;font-size:12px;color:var(--ink-2);cursor:pointer}
+.pick button.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+
+/* ── 情书 ── */
+.lcard{background:var(--card);border-radius:var(--r-lg);padding:13px;display:flex;gap:12px}
+.lcard .thumb{width:56px;height:56px;border-radius:12px;background:#F3EDEA;flex:0 0 56px;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--ink-3);overflow:hidden}
+.lcard .thumb img{width:100%;height:100%;object-fit:cover}
+.lcard .bd{flex:1;min-width:0}
+.lcard h3{font-size:15px;font-weight:700;margin-bottom:5px}
+.lcard .pv{font-size:12px;color:var(--ink-2);line-height:18px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.lcard .mt{font-size:11px;color:var(--ink-3);margin-top:7px;display:flex;gap:8px;align-items:center}
+.monthbar{font-size:12px;color:var(--ink-2);font-weight:600;margin:8px 0 2px}
+.ed-title{width:100%;border:0;outline:0;font-size:19px;font-weight:700;font-family:inherit;color:var(--ink);background:transparent}
+.ed-body{width:100%;border:0;outline:0;resize:none;font-family:inherit;font-size:14px;line-height:24px;color:#4A4450;min-height:210px;background:transparent}
+.edimg{width:100%;border-radius:14px;margin:8px 0}
+.empty{text-align:center;font-size:12px;color:var(--ink-3);padding:26px 10px;line-height:20px}
+
+/* ── 相册 ── */
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.pgrid .pc{aspect-ratio:1;border-radius:10px;overflow:hidden;background:#F0EAE7;position:relative;cursor:pointer}
+.pgrid .pc img{width:100%;height:100%;object-fit:cover;display:block}
+.pgrid .pc .dt{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(transparent,rgba(0,0,0,.55));color:#fff;font-size:9px;padding:12px 5px 3px;text-align:center}
+body.dark .pgrid .pc{background:#2A2830}
+.toast{position:absolute;left:50%;bottom:130px;transform:translateX(-50%) translateY(10px);background:rgba(20,18,22,.92);color:#fff;font-size:13px;padding:11px 18px;border-radius:12px;opacity:0;pointer-events:none;transition:.2s;z-index:70;max-width:78%;text-align:center;line-height:18px}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.lightbox{position:absolute;inset:0;background:#0B0B0D;z-index:60;display:none;flex-direction:column}
+.lightbox.on{display:flex}
+.lightbox img{flex:1;object-fit:contain;min-height:0;width:100%}
+
+/* ── 分寸 ── */
+.rule{background:var(--card);border-radius:var(--r-md);padding:12px 13px;display:flex;gap:10px;align-items:flex-start;border-left:3px solid var(--line-2)}
+.rule.like{border-left-color:#9FC4AE}
+.rule.hate{border-left-color:#E3A76B}
+.rule.never{border-left-color:#D1624F}
+.rule.rule{border-left-color:#9B8AA6}
+.rule .t{flex:1;font-size:13px;line-height:19px}
+.rule .ops{display:flex;gap:6px;flex:0 0 auto}
+.catbar{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.catbar button{border:1.6px solid var(--line-2);background:var(--card);border-radius:var(--r-md);padding:12px 13px;text-align:left;font-family:inherit;cursor:pointer;transition:.15s}
+.catbar button.on{border-color:transparent}
+.catbar button b{display:block;font-size:14px;font-weight:700;color:var(--ink)}
+.catbar button span{display:block;font-size:11px;color:var(--ink-2);margin-top:3px}
+.catbar button.on b,.catbar button.on span{color:#fff}
+.catbar [data-rc="all"]{grid-column:span 2}
+.catbar [data-rc="all"].on{background:var(--ink)}
+.catbar [data-rc="hate"].on{background:#D18B4E}
+.catbar [data-rc="never"].on{background:#C9526A}
+.catbar [data-rc="rule"].on{background:#8B7A96}
+.lineline{font-size:10px;padding:2px 7px;border-radius:6px;background:#FBE0E4;color:#B03A50;flex:0 0 auto;margin-top:2px}
+.agreed{font-size:10px;padding:2px 7px;border-radius:6px;background:var(--ok-soft);color:#337A5F;flex:0 0 auto;margin-top:2px}
+
+/* 设计方案视图 */
+.doc{max-width:820px;margin:0 auto;background:var(--card);border-radius:22px;padding:34px 38px;box-shadow:0 10px 30px rgba(80,60,60,.08);line-height:1.75}
+.doc h2{font-size:19px;margin:26px 0 10px}
+.doc h2:first-child{margin-top:0}
+.doc p,.doc li{font-size:14px;color:#4A4450}
+.doc ul{padding-left:20px;margin:6px 0}
+.doc .swatch{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
+.doc .sw{width:88px;text-align:center;font-size:11px;color:#8E8794}
+.doc .sw i{display:block;height:52px;border-radius:12px;margin-bottom:6px;border:1px solid #EFE7E3}
+.doc table{width:100%;border-collapse:collapse;margin:10px 0;font-size:13px}
+.doc td,.doc th{border-bottom:1px solid #EFE7E3;padding:9px 6px;text-align:left}
+.doc th{color:#8E8794;font-weight:600}
+</style>
+</head>
+<body>
+<button id="themeBtn" style="position:fixed;top:20px;right:22px;z-index:99;border:1px solid #E5DCD8;background:#fff;color:#8E8794;padding:7px 15px;border-radius:999px;font-size:12px;font-family:inherit;cursor:pointer">深色模式</button>
+<div class="stage">
+  <nav class="pager" id="pager"></nav>
+
+  <div class="viewport">
+    <div class="phone">
+
+      <!-- 1 速记 -->
+      <section class="screen" data-tab="0">
+        <div class="content">
+          <div class="hd">
+            <div><h1>此刻</h1><div class="sub">10月2日 星期五 · 3 件待办</div></div>
+            <div class="pair"><div class="av a">柠</div><div class="av b">迟</div></div>
+          </div>
+          <div class="quick">
+            <input id="qin" placeholder="随手记一件…（回车即存）">
+            <button class="go" id="qgo">记下</button>
+          </div>
+          <div class="card" id="homeCyc" style="display:none;align-items:center;gap:12px;padding:12px 14px"></div>
+          <div class="sect"><h2>要一起做的</h2><span>全部 6</span></div>
+          <div class="card" id="todos"></div>
+          <div class="sect"><h2>最近的备忘</h2><span>查看全部</span></div>
+          <div style="display:flex;flex-direction:column;gap:10px" id="recent"></div>
+        </div>
+      </section>
+
+      <!-- 2 清单 -->
+      <section class="screen" data-tab="1">
+        <div class="content">
+          <div class="hd">
+            <div><h1>说好的</h1><div class="sub">一起勾掉的事，都留着</div></div>
+            <div class="chip on" style="cursor:pointer">＋ 新建</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:12px" id="lists"></div>
+        </div>
+      </section>
+
+      <!-- 3 备忘 -->
+      <section class="screen" data-tab="2">
+        <div class="content">
+          <div class="hd"><div><h1>点滴</h1><div class="sub">都在这儿 · 两个人一起写的</div></div></div>
+          <div class="search"><svg width="15" height="15" viewBox="0 0 18 18" fill="none"><circle cx="8" cy="8" r="5.4" stroke="currentColor" stroke-width="1.6"/><path d="M12.2 12.2L15.5 15.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span>搜内容、标签、谁写的</span></div>
+          <div class="chips" id="filters"></div>
+          <div style="display:flex;flex-direction:column;gap:10px" id="memos"></div>
+        </div>
+      </section>
+
+      <!-- 4 新建（无 tabbar） -->
+      <section class="screen" data-notab="1">
+        <div class="content">
+          <div class="detail-h">
+            <div class="iconbtn" data-go="0">×</div>
+            <b style="font-size:16px">写一条</b>
+            <div style="color:var(--accent);font-size:14px;font-weight:600;cursor:pointer">保存</div>
+          </div>
+          <div class="sheet">
+            <textarea class="bigin" placeholder="写下要记住的事…">牛奶明天早上顺路买，记得拿低脂的那款</textarea>
+          </div>
+          <div class="sheet" style="padding:14px 16px">
+            <div class="rowline"><span>标签</span></div>
+            <div class="chips" style="margin-top:10px">
+              <button class="chip on">生活</button><button class="chip">想法</button>
+              <button class="chip">约定</button><button class="chip">待办</button>
+              <button class="chip">想买</button>
+            </div>
+            <div class="rowline" style="margin-top:8px"><span>设为待办</span><div class="sw on" data-sw><i></i></div></div>
+            <div class="rowline"><span>提醒我</span><div class="sw" data-sw><i></i></div></div>
+            <div class="rowline"><span>仅自己可见</span><div class="sw" data-sw><i></i></div></div>
+          </div>
+          <div class="sheet" style="padding:14px 16px">
+            <div class="rowline" style="border:0;padding-bottom:10px"><span>归属</span></div>
+            <div class="seg" id="owner">
+              <button class="on">共同</button><button>我的</button><button>TA 的</button>
+            </div>
+          </div>
+          <button class="bigbtn">保存到小满</button>
+        </div>
+      </section>
+
+      <!-- 5 约定 -->
+      <section class="screen" data-tab="3">
+        <div class="content">
+          <div class="hd"><div><h1>往后</h1><div class="sub">接下来 7 天有 4 件事</div></div></div>
+          <div class="card tint-gold" style="display:flex;align-items:center;gap:14px">
+            <div><div style="font-size:26px;font-weight:700;color:var(--gold);line-height:1.1">521</div><div style="font-size:12px;color:var(--gold-ink)">在一起的天数</div></div>
+            <div style="margin-left:auto;text-align:right"><div style="font-size:18px;font-weight:700;color:var(--gold)">43 天</div><div style="font-size:11px;color:var(--gold-ink)">后两周年</div></div>
+          </div>
+          <div class="sect"><h2>今天</h2></div>
+          <div class="card" id="p-today"></div>
+          <div class="sect"><h2>明天</h2></div>
+          <div class="card" id="p-tmr"></div>
+          <div class="sect"><h2>之后</h2></div>
+          <div class="card" id="p-later"></div>
+        </div>
+      </section>
+
+      <!-- 6 我们 -->
+      <section class="screen" data-tab="4">
+        <div class="content">
+          <div class="hd"><div><h1>我们俩</h1><div class="sub">绑定于 2025年4月28日</div></div></div>
+          <div class="card" style="display:flex;align-items:center;gap:14px">
+            <div class="pair" style="width:70px"><div class="av a">柠</div><div class="av b">迟</div></div>
+            <div><div style="font-size:15px;font-weight:700">阿柠 & 阿迟</div><div style="font-size:12px;color:var(--ink-2);margin-top:3px">共享 1 个小满空间</div></div>
+            <div style="margin-left:auto;color:var(--ink-3)">›</div>
+          </div>
+          <div class="groupbar">心意</div>
+          <div class="card" style="display:flex;align-items:center;gap:12px;padding:13px 15px" data-go="10">
+            <div style="width:38px;height:38px;border-radius:12px;background:#F6E9F0;flex:0 0 38px;display:flex;align-items:center;justify-content:center;font-size:16px">♡</div>
+            <div style="flex:1"><div style="font-size:15px;font-weight:700">互动</div>
+              <div style="font-size:12px;color:var(--ink-2);margin-top:3px">520 条真心话 · 挑战 · 情话</div></div>
+            <div style="color:var(--ink-3)">›</div>
+          </div>
+          <div class="card" style="display:flex;align-items:center;gap:12px;padding:13px 15px" data-go="14">
+            <div style="width:38px;height:38px;border-radius:12px;background:#EBF2FB;flex:0 0 38px;display:flex;align-items:center;justify-content:center;font-size:16px">✉</div>
+            <div style="flex:1"><div style="font-size:15px;font-weight:700">情书</div>
+              <div style="font-size:12px;color:var(--ink-2);margin-top:3px" id="homeLetSub">写给对方的话</div></div>
+            <div style="color:var(--ink-3)">›</div>
+          </div>
+          <div class="card" style="display:flex;align-items:center;gap:12px;padding:13px 15px" data-go="20">
+            <div style="width:38px;height:38px;border-radius:12px;background:#F3E4D0;flex:0 0 38px;display:flex;align-items:center;justify-content:center;font-size:16px">▣</div>
+            <div style="flex:1"><div style="font-size:15px;font-weight:700">相册</div>
+              <div style="font-size:12px;color:var(--ink-2);margin-top:3px" id="homePhSub">把本地照片放进来</div></div>
+            <div style="color:var(--ink-3)">›</div>
+          </div>
+          <div class="groupbar">相处</div>
+          <div class="card qcard" style="display:flex;align-items:center;gap:12px;padding:13px 15px" data-go="7">
+            <div style="width:38px;height:38px;border-radius:12px;background:var(--q-soft);flex:0 0 38px;display:flex;align-items:center;justify-content:center;font-size:16px">☂</div>
+            <div style="flex:1"><div style="font-size:15px;font-weight:700">雨过</div>
+              <div style="font-size:12px;color:var(--ink-2);margin-top:3px">12 次 · 最近一次 3 天前 · 都已翻篇</div></div>
+            <div style="color:var(--ink-3)">›</div>
+          </div>
+          <div class="card" style="display:flex;align-items:center;gap:12px;padding:13px 15px" data-go="16">
+            <div style="width:38px;height:38px;border-radius:12px;background:#F3EFF7;flex:0 0 38px;display:flex;align-items:center;justify-content:center;font-size:16px">⚖</div>
+            <div style="flex:1"><div style="font-size:15px;font-weight:700">分寸</div>
+              <div style="font-size:12px;color:var(--ink-2);margin-top:3px" id="homeRuleSub">记下彼此的喜欢与禁忌</div></div>
+            <div style="color:var(--ink-3)">›</div>
+          </div>
+          <div class="groupbar">照顾她</div>
+          <div class="card" style="display:flex;align-items:center;gap:12px;padding:13px 15px" data-go="12">
+            <div style="width:38px;height:38px;border-radius:12px;background:#FBD9DC;flex:0 0 38px;display:flex;align-items:center;justify-content:center;font-size:16px">◍</div>
+            <div style="flex:1"><div style="font-size:15px;font-weight:700">周期</div>
+              <div style="font-size:12px;color:var(--ink-2);margin-top:3px" id="homeCycSub">记录与预测</div></div>
+            <div style="color:var(--ink-3)">›</div>
+          </div>
+          <div class="stat">
+            <div><b>342</b><span>条备忘</span></div>
+            <div><b>128</b><span>件已完成</span></div>
+            <div><b>18</b><span>个清单</span></div>
+          </div>
+          <div class="card qcard" style="display:flex;align-items:center;gap:12px;border-left-color:var(--q)">
+            <div style="flex:1"><div style="font-size:15px;font-weight:700">雨过</div>
+              <div style="font-size:12px;color:var(--ink-2);margin-top:3px">12 次 · 最近一次 3 天前 · 都已翻篇</div></div>
+            <div style="color:var(--ink-3)">›</div>
+          </div>
+          <div class="card" style="padding:6px 16px">
+            <div class="setrow">归档的备忘<span class="ar">24 ›</span></div>
+            <div class="setrow">提醒与通知<span class="ar">›</span></div>
+            <div class="setrow">外观（浅色 / 深色）<span class="ar">›</span></div>
+            <div class="setrow">隐私与「仅自己」<span class="ar">›</span></div>
+            <div class="setrow">数据导出 / 注销<span class="ar">›</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 7 详情（无 tabbar） -->
+      <section class="screen" data-notab="1">
+        <div class="content">
+          <div class="detail-h">
+            <div class="iconbtn" data-go="2">‹</div>
+            <b style="font-size:14px;color:var(--ink-2)">一条备忘</b>
+            <div class="iconbtn">···</div>
+          </div>
+          <div class="author"><div class="av a">柠</div><span>阿柠 · 今天 09:12 · 共同可见</span></div>
+          <div class="quote">牛奶明天早上顺路买，记得拿低脂的那款 —— 上次买错的那款他喝不完。</div>
+          <div class="card" style="padding:12px 16px">
+            <div class="rowline"><span>关联清单</span><span style="color:var(--ink-2);font-size:13px">周末采购 ›</span></div>
+            <div class="rowline"><span>提醒</span><span style="color:var(--ink-2);font-size:13px">明天 08:30 ›</span></div>
+            <div class="rowline"><span>标签</span><span style="color:var(--ink-2);font-size:13px">生活 · 待办 ›</span></div>
+          </div>
+          <div class="card tint-him" style="padding:13px 15px">
+            <div style="font-size:12px;color:var(--him-ink);margin-bottom:6px">阿迟 · 10 分钟前</div>
+            <div style="font-size:14px;line-height:21px">知道了，我下班顺路带。要不要顺便买可颂？</div>
+          </div>
+          <div class="acts">
+            <button>置顶</button><button>编辑</button><button class="pri">完成 ✓</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 8 雨过 -->
+      <section class="screen" data-tab="4">
+        <div class="content">
+          <div class="hd">
+            <div><h1>雨过</h1><div class="sub">吵过的事，别白吵</div></div>
+            <div class="chip" data-go="8" style="cursor:pointer;color:var(--q-deep);border-color:#E0D8E6">＋ 记一次</div>
+          </div>
+          <div class="qstat">
+            <div><b>12</b><span>一共记下</span></div>
+            <div><b>4h</b><span>平均和好用时</span></div>
+            <div><b>家务</b><span>最常因为</span></div>
+          </div>
+          <div class="chips">
+            <button class="chip on">全部</button><button class="chip">已翻篇</button><button class="chip">还没翻篇</button>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px" id="qlist"></div>
+        </div>
+      </section>
+
+      <!-- 9 记一次吵架（无 tabbar） -->
+      <section class="screen" data-notab="1">
+        <div class="content">
+          <div class="detail-h">
+            <div class="iconbtn">×</div>
+            <b style="font-size:16px">说开了</b>
+            <div style="color:var(--q-deep);font-size:14px;font-weight:600;cursor:pointer">保存</div>
+          </div>
+          <div class="sheet">
+            <textarea class="bigin" placeholder="简单说说因为什么…" style="min-height:96px">家务分工没说清楚，我觉得他答应了没做，他觉得我没提醒他。</textarea>
+          </div>
+          <div class="sheet" style="padding:14px 16px">
+            <div class="rowline" style="border:0;padding-bottom:10px"><span>这一次</span><span style="font-size:11px;color:var(--ink-3)">选不出来就选「说不清」</span></div>
+            <div class="fault" id="fault">
+              <button>这次怪我<em>这次是我没道理</em></button>
+              <button>这次怪 TA<em>确实是对方的问题</em></button>
+              <button class="on">各退一步<em>一人一半，各退一步</em></button>
+              <button>说不清<em>其实没谁对谁错</em></button>
+            </div>
+          </div>
+          <div class="sheet" style="padding:14px 16px">
+            <div class="rowline" style="border:0;padding-bottom:10px"><span>当时的情绪</span></div>
+            <div class="chips">
+              <button class="chip on">委屈</button><button class="chip">生气</button>
+              <button class="chip">不被理解</button><button class="chip">累了</button>
+              <button class="chip">其实还好</button>
+            </div>
+          </div>
+          <div class="sheet" style="padding:14px 16px">
+            <div class="rowline" style="border:0;padding-bottom:10px"><span>这次有多生气</span><span style="font-size:11px;color:var(--ink-3)">决定能抽到多重</span></div>
+            <div class="heat">
+              <button data-lv="1">小别扭</button><button data-lv="2">有点气</button>
+              <button data-lv="3" class="on">真的生气</button><button data-lv="4">很受伤</button>
+              <button data-lv="5">很严重</button>
+            </div>
+            <div class="heatnote" style="margin-top:9px">要认真哄一哄</div>
+          </div>
+          <div class="card qcard" style="border-left-color:var(--q);padding:12px 15px;cursor:pointer" data-go="16">
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="flex:1"><div style="font-size:13px;font-weight:700">我们的规矩</div>
+                <div style="font-size:11px;color:var(--ink-2);margin-top:3px" id="quarrelRuleSub">吵架前先看看当初约好过什么</div></div>
+              <div style="color:var(--ink-3)">›</div>
+            </div>
+          </div>
+          <div class="card qcard" style="border-left-color:var(--q)">
+            <div style="font-size:13px;font-weight:700;margin-bottom:10px">翻篇的方式</div>
+            <div style="font-size:13px;color:var(--ink-2);line-height:20px">还没抽 · 点「去抽签」由系统随机选一个，这次归谁来领。</div>
+            <div style="display:flex;gap:8px;margin-top:12px">
+              <button class="chip" data-go="9" style="flex:1;text-align:center">抽一张 ›</button>
+              <button class="chip" style="flex:1;text-align:center">我自己来</button>
+            </div>
+          </div>
+          <div class="sheet" style="padding:14px 16px">
+            <div class="rowline" style="border:0;padding-bottom:8px"><span>下次我们约好</span></div>
+            <textarea class="bigin" style="min-height:70px;font-size:14px;line-height:22px;color:var(--q-deep)">家务写进共享清单，谁做完谁勾掉，不用互相提醒。</textarea>
+            <div style="font-size:11px;color:var(--ink-3);margin-top:8px">这条会存进「我们的约定」，下次吵架前可以翻出来看。</div>
+          </div>
+          <button class="bigbtn" style="background:var(--q-deep)">保存这次记录</button>
+        </div>
+      </section>
+
+      <!-- 10 抽一张（无 tabbar） -->
+      <section class="screen" data-notab="1">
+        <div class="content">
+          <div class="detail-h">
+            <div class="iconbtn" data-go="8">‹</div>
+            <b style="font-size:16px">抽一张</b>
+            <div class="iconbtn">···</div>
+          </div>
+          <div class="sect" style="margin-bottom:2px"><h2>这次有多生气</h2><span id="poolCount">520 条</span></div>
+          <div class="heat" id="heat">
+            <button data-lv="1">小别扭</button>
+            <button data-lv="2" class="on">有点气</button>
+            <button data-lv="3">真的生气</button>
+            <button data-lv="4">很受伤</button>
+            <button data-lv="5">很严重</button>
+          </div>
+          <div class="heatnote" id="heatNote">需要一点表示</div>
+          <div class="draw" id="drawBox">
+            <div class="cap">翻 篇 的 方 式</div>
+            <div class="txt" id="drawTxt">给对方点一杯奶茶，送到工位</div>
+            <div class="dlv"><span class="lv lv2" id="drawLv">有点气</span><span id="drawMeta">投喂 · 现在就能做</span></div>
+          </div>
+          <div style="display:flex;gap:10px">
+            <button class="chip" style="flex:1;text-align:center;padding:12px" id="redraw">换一张</button>
+            <button class="chip on" style="flex:1;text-align:center;padding:12px">就这个 ✓</button>
+          </div>
+          <div class="sect"><h2>翻篇点子库</h2><span id="poolCount2"></span></div>
+          <div class="chips">
+            <button class="chip on" data-mo="all">全部时机</button>
+            <button class="chip" data-mo="now">现在就能做</button>
+            <button class="chip" data-mo="meet">下次见面</button>
+          </div>
+          <div class="chips" id="catChips"></div>
+          <div class="pool" id="pool"></div>
+          <div class="card qcard" style="border-left-color:var(--accent)">
+            <div style="font-size:13px;font-weight:700;margin-bottom:6px">小提示</div>
+            <div style="font-size:12px;color:var(--ink-2);line-height:19px">分级是为了匹配这次的情绪，不是比谁更狠。抽到什么就做到什么，做完这件事就算翻篇——记录会留着，情绪可以放下了。</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 11 互动 -->
+      <section class="screen" data-tab="4">
+        <div class="content">
+          <div class="hd"><div><h1>互动</h1><div class="sub" id="actSub">520 条 · 已玩 0 · 收藏 0</div></div></div>
+          <div class="chips" id="actCats"></div>
+          <div class="actcard" id="actBox">
+            <div class="cap">互 动</div>
+            <div class="txt" id="actTxt">点一下，抽一张</div>
+            <div class="sub" id="actMeta">全部 · 520 条里随机</div>
+          </div>
+          <div class="actbtns">
+            <button id="actAgain">换一张</button>
+            <button id="actFav">收藏</button>
+            <button id="actDone">已玩过</button>
+          </div>
+          <div class="sect"><h2>我的收藏</h2><span id="favCount">0 条</span></div>
+          <div style="display:flex;flex-direction:column;gap:9px" id="favList"></div>
+          <div class="sect"><h2>翻翻看</h2><span id="recentCount"></span></div>
+          <div style="display:flex;flex-direction:column;gap:9px" id="actRecent"></div>
+        </div>
+      </section>
+
+      <!-- 12 互动库 -->
+      <section class="screen" data-tab="4">
+        <div class="content">
+          <div class="hd"><div><h1>互动库</h1><div class="sub" id="libSub">520 条 · 5 类</div></div></div>
+          <div class="chips">
+            <button class="chip on" data-af="all">全部</button>
+            <button class="chip" data-af="fav">收藏</button>
+            <button class="chip" data-af="done">已玩过</button>
+            <button class="chip" data-af="new">还没玩</button>
+          </div>
+          <div class="chips" id="actCats2"></div>
+          <div style="display:flex;flex-direction:column;gap:9px" id="libList"></div>
+        </div>
+      </section>
+
+      <!-- 13 周期 -->
+      <section class="screen" data-tab="4">
+        <div class="content">
+          <div class="hd">
+            <div><h1>周期</h1><div class="sub" id="cycSub">还没有记录</div></div>
+            <div class="chip" data-go="13" style="cursor:pointer;color:var(--accent);border-color:var(--accent)">＋ 记一次</div>
+          </div>
+          <div id="phCard"></div>
+          <div class="card">
+            <div class="sect" style="margin-bottom:10px"><h2 id="calTitle">10月</h2><span style="font-size:11px">点日期可编辑</span></div>
+            <div class="cal" id="cal"></div>
+            <div class="legend" style="margin-top:13px">
+              <span><i style="background:#FBD9DC"></i>经期</span>
+              <span><i style="background:#E9DCF3"></i>排卵期</span>
+              <span><i style="background:#fff;border:1.5px dashed #E8C6CD"></i>预测经期</span>
+            </div>
+          </div>
+          <div class="sect"><h2>预测</h2><span id="predTip"></span></div>
+          <div class="card" id="predCard"></div>
+          <div class="sect"><h2>历史记录</h2><span id="cycCount"></span></div>
+          <div style="display:flex;flex-direction:column;gap:9px" id="cycList"></div>
+        </div>
+      </section>
+
+      <!-- 14 记一次周期（无 tabbar） -->
+      <section class="screen" data-notab="1">
+        <div class="content">
+          <div class="detail-h">
+            <div class="iconbtn" data-go="12">×</div>
+            <b style="font-size:16px">记一次</b>
+            <div style="color:var(--accent);font-size:14px;font-weight:600;cursor:pointer" id="cycSave">保存</div>
+          </div>
+          <div class="card">
+            <div class="formrow"><label>开始日期</label><input type="date" id="cyStart"></div>
+            <div class="formrow" style="margin-bottom:0"><label>结束日期（还没结束可留空）</label><input type="date" id="cyEnd"></div>
+          </div>
+          <div class="card">
+            <div class="formrow"><label>经量</label><div class="pick" data-pick="flow">
+              <button data-v="0">少</button><button data-v="1" class="on">中</button><button data-v="2">多</button></div></div>
+            <div class="formrow" style="margin-bottom:0"><label>痛经程度</label><div class="pick" data-pick="pain">
+              <button data-v="0" class="on">没有</button><button data-v="1">轻微</button><button data-v="2">明显</button><button data-v="3">很痛</button></div></div>
+          </div>
+          <div class="card">
+            <div class="formrow"><label>情绪</label><div class="pick" data-pick="mood">
+              <button>平静</button><button>烦躁</button><button>低落</button><button>想哭</button><button>黏人</button><button>还好</button></div></div>
+            <div class="formrow" style="margin-bottom:0"><label>症状（可多选）</label><div class="pick" data-pick="sym">
+              <button>腰酸</button><button>头痛</button><button>腹胀</button><button>疲惫</button><button>胸胀</button><button>失眠</button><button>食欲差</button><button>长痘</button></div></div>
+          </div>
+          <div class="card"><div class="formrow" style="margin-bottom:0"><label>想说点什么</label>
+            <textarea id="cyNote" rows="2" placeholder="今天特别累，想被抱着"></textarea></div></div>
+          <button class="bigbtn" id="cycSave2">保存这次记录</button>
+        </div>
+      </section>
+
+      <!-- 15 情书 -->
+      <section class="screen" data-tab="4">
+        <div class="content">
+          <div class="hd">
+            <div><h1>情书</h1><div class="sub" id="letSub">0 封</div></div>
+            <div class="chip" data-go="15" style="cursor:pointer;color:var(--accent);border-color:var(--accent)">＋ 写一封</div>
+          </div>
+          <div class="search"><svg width="15" height="15" viewBox="0 0 18 18" fill="none"><circle cx="8" cy="8" r="5.4" stroke="currentColor" stroke-width="1.6"/><path d="M12.2 12.2L15.5 15.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            <input id="letSearch" placeholder="搜标题或正文里的关键词" style="border:0;outline:0;font-family:inherit;font-size:14px;flex:1;background:transparent;color:var(--ink)"></div>
+          <div id="letList"></div>
+        </div>
+      </section>
+
+      <!-- 16 写情书（无 tabbar） -->
+      <section class="screen" data-notab="1">
+        <div class="content">
+          <div class="detail-h">
+            <div class="iconbtn" data-go="14">‹</div>
+            <b style="font-size:14px;color:var(--ink-2)" id="letMode">写一封</b>
+            <div style="color:var(--accent);font-size:14px;font-weight:600;cursor:pointer" id="letSave">保存</div>
+          </div>
+          <div class="card">
+            <input class="ed-title" id="letTitle" placeholder="给这封信起个标题">
+            <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
+              <span style="font-size:12px;color:var(--ink-2)">来自</span>
+              <div class="seg" id="letAuthor"><button class="on">她</button><button>他</button></div>
+              <span style="margin-left:auto;font-size:11px;color:var(--ink-3)" id="letDate"></span>
+            </div>
+          </div>
+          <div class="card">
+            <textarea class="ed-body" id="letBody" placeholder="想说的话写在这里…"></textarea>
+            <div id="letImgs"></div>
+            <div style="display:flex;gap:9px;margin-top:10px">
+              <label class="chip" style="flex:1;text-align:center;padding:10px;cursor:pointer">＋ 插入图片
+                <input type="file" accept="image/*" id="letFile" style="display:none"></label>
+              <button class="chip" style="flex:1;text-align:center;padding:10px" id="letDel">删除</button>
+            </div>
+          </div>
+          <div class="card qcard" style="border-left-color:var(--him)">
+            <div style="font-size:12px;color:var(--ink-2);line-height:19px">情书只存在你们两个人的设备里，不会上传。写完可以设为「对方可见」，对方打开就能看到。</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 17 分寸 -->
+      <section class="screen" data-tab="4">
+        <div class="content">
+          <div class="hd">
+            <div><h1>分寸</h1><div class="sub" id="ruleSub">还没有记录</div></div>
+            <div class="chip" data-go="17" style="cursor:pointer;color:var(--accent);border-color:var(--accent)">＋ 记一条</div>
+          </div>
+          <div class="catbar" id="ruleCats"></div>
+          <div class="chips">
+            <button class="chip on" data-rw="all">全部</button>
+            <button class="chip" data-rw="her">她的</button>
+            <button class="chip" data-rw="him">他的</button>
+            <button class="chip" data-rw="both">共同的</button>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:9px" id="ruleList"></div>
+        </div>
+      </section>
+
+      <!-- 18 记一条分寸（无 tabbar） -->
+      <section class="screen" data-notab="1">
+        <div class="content">
+          <div class="detail-h">
+            <div class="iconbtn" data-go="16">×</div>
+            <b style="font-size:16px">记一条</b>
+            <div style="color:var(--accent);font-size:14px;font-weight:600;cursor:pointer" id="ruleSave">保存</div>
+          </div>
+          <div class="card">
+            <div class="formrow"><label>属于哪一类</label>
+              <div class="pick" data-pick2="cat">
+                <button data-v="like">喜欢</button><button data-v="hate">讨厌</button>
+                <button data-v="never">不能做</button><button data-v="rule" class="on">我们的规矩</button>
+              </div></div>
+            <div class="formrow" style="margin-bottom:0"><label>关于谁</label>
+              <div class="pick" data-pick2="who">
+                <button data-v="her">她</button><button data-v="him">他</button>
+                <button data-v="both" class="on">共同</button>
+              </div></div>
+          </div>
+          <div class="card">
+            <div class="formrow" style="margin-bottom:0"><label>具体内容</label>
+              <textarea id="ruleText" rows="3" placeholder="例如：吵架时不许说分手"></textarea></div>
+          </div>
+          <div class="card" style="padding:6px 16px">
+            <div class="rowline"><span>这是底线<span style="font-size:11px;color:var(--ink-3)">　触犯会很严重</span></span><div class="sw" data-sw2="line"><i></i></div></div>
+            <div class="rowline" style="border:0"><span>需要对方确认</span><div class="sw on" data-sw2="agreed"><i></i></div></div>
+          </div>
+          <button class="bigbtn" id="ruleSave2">保存这一条</button>
+        </div>
+      </section>
+
+      <!-- 19 桌面小部件（Android） -->
+      <section class="screen" data-raw="1">
+        <div class="content" style="padding:0;gap:0">
+          <div class="wall">
+            <div class="statusbar" style="color:#fff"><span>9:41</span><span class="sb-icons"><svg width="60" height="12" viewBox="0 0 60 12" fill="none"><path d="M1 8.6h3.2V12H1zM5.6 6.2h3.2V12H5.6zM10.2 3.4h3.2V12h-3.2zM14.8 0.6H18V12h-3.2z" fill="currentColor"/><path d="M22.6 3.1a7.6 7.6 0 019.6 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/><path d="M24.9 5.8a4 4 0 015 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/><circle cx="27.4" cy="9.1" r="1.3" fill="currentColor"/><rect x="35" y="1" width="22" height="10" rx="2.6" stroke="currentColor" stroke-opacity=".6" stroke-width="1.1" fill="none"/><rect x="37" y="3" width="15" height="6" rx="1.3" fill="currentColor"/></svg></span></div>
+            <div style="margin:32px 0 20px;text-align:center"><div style="font-size:42px;font-weight:200;color:#fff;letter-spacing:-1px">9:41</div><div style="font-size:12px;color:rgba(255,255,255,.75);margin-top:2px">10月2日 星期五</div></div>
+            <div style="display:flex;gap:14px;align-items:flex-start">
+              <div class="wdgt" style="width:168px;flex:0 0 168px">
+                <div class="wt"><b>小满</b>· 今天</div>
+                <div class="wb" style="font-size:12px">TA 还没写<br>你已经写了 1 条</div>
+                <div class="wa"><button class="solid">＋ 记一条</button></div>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:12px;align-items:center;padding-top:4px">
+                <div class="ic" style="width:50px;height:50px;border-radius:14px;background:#E86A7C;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700">小满</div>
+                <div class="ic" style="width:50px;height:50px;border-radius:14px;background:#6E93C8;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700">相册</div>
+              </div>
+            </div>
+            <div class="wdgt" style="margin-top:14px">
+              <div class="wt"><b>要一起做的</b><span style="margin-left:auto;color:var(--ink-3)">2/4</span></div>
+              <div class="wrow"><span class="tick2"></span><span>周六去宜家买台灯</span></div>
+              <div class="wrow done"><span class="tick2"></span><span>预约下周体检</span></div>
+              <div class="wrow"><span class="tick2"></span><span>给妈妈挑生日礼物</span></div>
+              <div class="wa"><button>周期 · 卵泡期第 8 天</button><button class="solid">打开小满</button></div>
+            </div>
+            <div class="dock">
+              <div class="ic" style="background:#4A4450">电话</div>
+              <div class="ic" style="background:#4FA383">信息</div>
+              <div class="ic" style="background:#E86A7C">小满</div>
+              <div class="ic" style="background:#6E93C8">相机</div>
+              <div class="ic" style="background:#9B8AA6">设置</div>
+            </div>
+            <div class="sysnav" style="background:transparent"><i style="background:#fff;opacity:.85"></i></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 20 快捷方式（长按图标） -->
+      <section class="screen" data-raw="1">
+        <div class="content" style="padding:0;gap:0">
+          <div class="wall" style="align-items:center;justify-content:center;position:relative">
+            <div class="statusbar" style="color:#fff;position:absolute;top:0;left:0;right:0;padding:0 16px"><span>9:41</span><span class="sb-icons"><svg width="60" height="12" viewBox="0 0 60 12" fill="none"><path d="M1 8.6h3.2V12H1zM5.6 6.2h3.2V12H5.6zM10.2 3.4h3.2V12h-3.2zM14.8 0.6H18V12h-3.2z" fill="currentColor"/><circle cx="27.4" cy="9.1" r="1.3" fill="currentColor"/><rect x="35" y="1" width="22" height="10" rx="2.6" stroke="currentColor" stroke-opacity=".6" stroke-width="1.1" fill="none"/><rect x="37" y="3" width="15" height="6" rx="1.3" fill="currentColor"/></svg></span></div>
+            <div class="shortcut">
+              <div><span style="width:26px;height:26px;border-radius:8px;background:var(--accent-soft);color:var(--accent-deep);display:flex;align-items:center;justify-content:center;font-size:13px">✎</span>记一条</div>
+              <div><span style="width:26px;height:26px;border-radius:8px;background:var(--him-soft);color:var(--him-ink);display:flex;align-items:center;justify-content:center;font-size:13px">✉</span>写情书</div>
+              <div><span style="width:26px;height:26px;border-radius:8px;background:var(--q-soft);color:var(--q-deep);display:flex;align-items:center;justify-content:center;font-size:13px">♡</span>抽一张</div>
+            </div>
+            <div style="width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:9px solid var(--card);margin-top:-1px"></div>
+            <div class="ic" style="width:58px;height:58px;border-radius:16px;background:#E86A7C;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;margin-top:3px">小满</div>
+            <div style="font-size:11px;color:rgba(255,255,255,.85);margin-top:22px;text-align:center;line-height:18px">长按图标即可直达<br>三个最常用的动作</div>
+            <div class="sysnav" style="background:transparent;position:absolute;bottom:0;left:0;right:0"><i style="background:#fff;opacity:.85"></i></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 21 相册 -->
+      <section class="screen" data-tab="4">
+        <div class="content">
+          <div class="hd">
+            <div><h1>相册</h1><div class="sub" id="phSub">还没有照片</div></div>
+            <div class="chip" id="phImport" style="cursor:pointer;color:var(--accent);border-color:var(--accent)">＋ 导入</div>
+          </div>
+          <input type="file" id="phFile" accept="image/*" multiple style="display:none">
+          <div class="chips">
+            <button class="chip on" data-pw="all">全部</button>
+            <button class="chip" data-pw="her">她</button>
+            <button class="chip" data-pw="him">他</button>
+            <button class="chip" data-pw="both">共同</button>
+          </div>
+          <div id="phList"></div>
+        </div>
+      </section>
+
+    </div>
+    <div class="lightbox" id="lightbox">
+      <div style="flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;padding:10px 14px;color:#fff">
+        <span class="lb-date" style="font-size:13px"></span>
+        <span class="iconm" id="lbClose" style="background:rgba(255,255,255,.16);color:#fff">×</span>
+      </div>
+      <img alt="">
+      <div style="flex:0 0 auto;padding:12px 14px 22px;display:flex;flex-direction:column;gap:10px">
+        <div class="seg lb-who" style="background:rgba(255,255,255,.12)">
+          <button data-w="her" class="on">她</button>
+          <button data-w="him">他</button>
+          <button data-w="both">共同</button>
+        </div>
+        <input class="lb-note" placeholder="给这张照片写一句话" style="width:100%;background:rgba(255,255,255,.1);border:0;border-radius:12px;padding:11px 12px;color:#fff;font-family:inherit;font-size:13px;outline:0">
+        <button id="lbDel" style="height:40px;border-radius:12px;border:0;background:rgba(255,255,255,.12);color:#fff;font-family:inherit;font-size:13px;cursor:pointer">删除这张</button>
+      </div>
+    </div>
+  </div>
+  <div class="note">「小满」· 点击上方按钮切换页面，按分组归类 · 清单、筛选、开关、速记条均可点击</div>
+</div>
+
+<script>
+/* ---------- 数据 ---------- */
+const TODOS=[
+ {t:'周六去宜家买台灯',who:'him',n:'阿迟',d:false},
+ {t:'给妈妈挑生日礼物',who:'her',n:'阿柠',d:false},
+ {t:'10/5 前交房租',who:'him',n:'阿迟',d:false},
+ {t:'预约下周体检',who:'her',n:'阿柠',d:true}
+];
+const MEMOS=[
+ {t:'牛奶快没了，明天早上顺路买低脂那款',tag:'生活',cls:'life',who:'her',n:'阿柠',time:'9:12'},
+ {t:'她说明年想去海边跨年，先存一笔旅行基金',tag:'想法',cls:'idea',who:'him',n:'阿迟',time:'昨天'},
+ {t:'周日下午三点 牙医复查（带上次病历）',tag:'约定',cls:'plan',who:'her',n:'阿柠',time:'昨天'},
+ {t:'猫粮只剩两天量，加入周末采购',tag:'待办',cls:'todo',who:'him',n:'阿迟',time:'周一'},
+ {t:'他开会时别打电话，改发消息',tag:'想法',cls:'idea',who:'her',n:'阿柠',time:'周一'}
+];
+const LISTS=[
+ {n:'周末采购',items:[['牛奶','her',1],['可颂','him',1],['洗衣液','her',0],['猫粮','him',0],['垃圾袋','her',0]]},
+ {n:'旅行准备',items:[['护照（检查有效期）','her',1],['充电宝充电','him',0],['晕车药','her',0],['泳衣','him',0]]},
+ {n:'家务分工',items:[['洗碗 · 阿迟','him',1],['倒垃圾 · 阿柠','her',1],['晾衣服 · 阿迟','him',1]]}
+];
+const PLANS={
+ today:[['21:30','今晚','一起把新剧的第一集看了','说好不先偷看']],
+ tmr:[['19:00','明天','火锅 · 已订位','南门那家，靠窗']],
+ later:[['10/05','周六','交房租','自动提醒已开'],['10/15','周三','阿柠生日','' ]]
+};
+/* n=按钮名  s=对应第几屏(-1 为文档)  g=所属分组；按钮按分组顺序排列，与屏幕物理顺序解耦 */
+const PAGES=[
+ {n:'此刻',s:0,g:'主流程'},{n:'点滴',s:2,g:'主流程'},{n:'说好的',s:1,g:'主流程'},
+ {n:'写一条',s:3,g:'主流程'},{n:'往后',s:4,g:'主流程'},{n:'一条备忘',s:6,g:'主流程'},
+ {n:'我们俩',s:5,g:'我们俩'},
+ {n:'雨过',s:7,g:'相处'},{n:'说开了',s:8,g:'相处'},{n:'抽一张',s:9,g:'相处'},
+ {n:'分寸',s:16,g:'相处'},{n:'记一条',s:17,g:'相处'},
+ {n:'互动',s:10,g:'心意'},{n:'互动库',s:11,g:'心意'},{n:'情书',s:14,g:'心意'},{n:'写一封',s:15,g:'心意'},{n:'相册',s:20,g:'心意'},
+ {n:'周期',s:12,g:'照顾她'},{n:'记一次',s:13,g:'照顾她'},
+ {n:'桌面小部件',s:18,g:'Android 桌面'},{n:'快捷方式',s:19,g:'Android 桌面'},
+ {n:'设计方案',s:-1,g:'文档'}
+];
+const TABS=[
+ ['此刻','<path d="M3 15.2v-2.6l8.4-8.4 2.6 2.6L5.6 15.2H3z" stroke-width="1.6" stroke-linejoin="round"/><path d="M11.4 5.2l2.6 2.6" stroke-width="1.6"/>'],
+ ['说好的','<path d="M3 5l1.8 1.8L7.4 4.2" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 9.6l1.8 1.8 2.6-2.6" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 14.2h3" stroke-width="1.6" stroke-linecap="round"/><path d="M10 6h6M10 10.6h6M10 15.2h4" stroke-width="1.6" stroke-linecap="round"/>'],
+ ['点滴','<path d="M4 3.4h10v11.2H4z" stroke-width="1.6" stroke-linejoin="round"/><path d="M6.6 6.8h4.8M6.6 9.6h4.8M6.6 12.4h2.6" stroke-width="1.5" stroke-linecap="round"/>'],
+ ['往后','<rect x="3" y="4.2" width="12" height="11" rx="3" stroke-width="1.6"/><path d="M3 7.8h12" stroke-width="1.6"/><path d="M6.4 2.6v2.4M11.6 2.6v2.4" stroke-width="1.6" stroke-linecap="round"/>'],
+ ['我们俩','<circle cx="6.6" cy="6" r="2.7" stroke-width="1.6"/><path d="M2.4 15c0-2.3 1.9-3.9 4.2-3.9s4.2 1.6 4.2 3.9" stroke-width="1.6" stroke-linecap="round"/><circle cx="13.2" cy="6.8" r="2" stroke-width="1.5" stroke-opacity=".55"/><path d="M13.2 11.8c1.6.3 2.6 1.4 2.6 3.4" stroke-width="1.5" stroke-linecap="round" stroke-opacity=".55"/>']
+];
+
+/* ---------- 骨架：状态栏 + Tab ---------- */
+const SB=`<div class="statusbar"><span>9:41</span><span class="sb-icons">
+<svg width="60" height="12" viewBox="0 0 60 12" fill="none"><path d="M1 8.6h3.2V12H1zM5.6 6.2h3.2V12H5.6zM10.2 3.4h3.2V12h-3.2zM14.8 0.6H18V12h-3.2z" fill="currentColor"/><path d="M22.6 3.1a7.6 7.6 0 019.6 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/><path d="M24.9 5.8a4 4 0 015 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/><circle cx="27.4" cy="9.1" r="1.3" fill="currentColor"/><rect x="35" y="1" width="22" height="10" rx="2.6" stroke="currentColor" stroke-opacity=".5" stroke-width="1.1" fill="none"/><rect x="37" y="3" width="15" height="6" rx="1.3" fill="currentColor"/></svg>
+</span></div>`;
+const tickSvg=`<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.4 6.2l2.4 2.4 4.8-5" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+document.querySelectorAll('.screen').forEach(sc=>{
+  if(sc.dataset.raw){return}
+  sc.insertAdjacentHTML('afterbegin',SB);
+  if(!sc.dataset.notab){
+    const idx=+sc.dataset.tab;
+    sc.insertAdjacentHTML('beforeend',`<div class="tabbar">`+
+      TABS.map((t,i)=>`<div class="tab${i===idx?' on':''}" data-i="${i}"><div class="ind"><svg width="24" height="24" viewBox="0 0 18 18" fill="none">${t[1]}</svg></div><span>${t[0]}</span></div>`).join('')
+      +`</div>`);
+  }
+  sc.insertAdjacentHTML('beforeend',`<div class="sysnav"><i></i></div>`);
+});
+
+/* ---------- 渲染 ---------- */
+const tick=(d)=>`<div class="tick${d?' on':''}">${tickSvg}</div>`;
+const whoTag=(w,n)=>`<span class="who"><i class="dot ${w}"></i>${n} 加的</span>`;
+
+function renderTodos(){
+  document.getElementById('todos').innerHTML=TODOS.map((x,i)=>
+    `<div class="todo${x.d?' done':''}" data-t="${i}">
+      <div class="tick${x.d?' on':''}" data-tick="${i}">${tickSvg}</div>
+      <div style="flex:1"><div class="tx">${x.t}</div>${whoTag(x.who,x.n)}</div>
+    </div>`).join('');
+}
+function memoCard(m){
+  return `<div class="memo"><div class="bar ${m.who}"></div><div class="bd">
+    <div class="t1">${m.t}</div>
+    <div class="mt"><span class="tag ${m.cls}">${m.tag}</span><span class="time">${m.time}</span></div>
+  </div></div>`;
+}
+function renderLists(){
+  document.getElementById('lists').innerHTML=LISTS.map(L=>{
+    const done=L.items.filter(i=>i[2]).length, all=L.items.length, full=done===all;
+    return `<div class="listcard">
+      <div class="lh"><b>${L.n}</b><em>${done}/${all}${full?' · 已完成':''}</em></div>
+      <div class="pbar"><i class="${full?'full':''}" style="width:${done/all*100}%"></i></div>
+      ${L.items.map((it,i)=>`<div class="item${it[2]?' done':''}">
+        <div class="tick${it[2]?' on':''}" data-li="${L.n}|${i}">${tickSvg}</div>
+        <span>${it[0]}</span>
+        <span class="who"><i class="dot ${it[1]}"></i></span></div>`).join('')}
+    </div>`;
+  }).join('');
+}
+function renderPlans(){
+  const one=(p)=>`<div class="plan">
+    <div class="when"><b>${p[0]}</b><em>${p[1]}</em></div>
+    <div class="bd"><b>${p[2]}</b>${p[3]?`<p>${p[3]}</p>`:''}
+      ${p[2].includes('生日')?`<div class="cd">还有 13 天</div>`:''}</div></div>`;
+  document.getElementById('p-today').innerHTML=PLANS.today.map(one).join('');
+  document.getElementById('p-tmr').innerHTML=PLANS.tmr.map(one).join('');
+  document.getElementById('p-later').innerHTML=PLANS.later.map(one).join('');
+}
+const QS=[
+ {d:'10月1日',t:'家务分工没说清楚，他答应了没做，我也没提醒他。',f:'both',ft:'各退一步',p:'给对方按摩 20 分钟',r:1,e:'委屈'},
+ {d:'9月24日',t:'约好七点见面，他迟到四十分钟也没提前说一声。',f:'ta',ft:'这次怪 TA',p:'请喝一杯奶茶 + 下次提前报备',r:1,e:'不被理解'},
+ {d:'9月12日',t:'我说话语气不好，把他一天的好心情搞砸了。',f:'me',ft:'这次怪我',p:'明早做早餐，当面道歉',r:1,e:'其实还好'},
+ {d:'昨天',t:'为要不要养第二只猫争执，谁也说服不了谁。',f:'none',ft:'说不清',p:'暂缓三个月再议',r:0,e:'累了'}
+];
+const POOL_GROUPS=[
+{c:'投喂',list:[
+'连点三天奶茶送到对方家，口味对方定','点一份外卖，但不许点你自己想吃的','请对方吃一顿，预算上限由对方定',
+'连点两天早餐，每天都要拍照汇报','点一份甜品，备注必须写我错了','请一次外卖，全程由对方点单你付钱',
+'点一杯咖啡，送到对方工位并附道歉','连点三天夜宵，不许重复同一家','请对方吃一次你最不爱吃的东西',
+'点一份水果，挑最贵那一档','给对方点一周早餐，每天不重样','点一份面，加料加到对方满意为止',
+'请一次火锅，锅底和菜全由对方选','点一份蛋糕，上面必须写道歉的话','连点两天午餐，猜错对方想吃的就重来',
+'请一次日料，价格由对方拍板','点一份外卖，送到了要拍开箱视频给对方','请一次烧烤，你点单但全按对方口味',
+'点一份甜品，连续两天都点','请一次自助，你负责全程拿盘排队','点一份汤，要热的，送到对方手上',
+'请一次早餐，连续两天早起下单','点一份炸鸡，热量超标的部分你认','请一次牛排，熟度按对方要求不许吐槽',
+'点一份沙拉，配料全听对方的','请一次披萨，边角全部归你','点一份寿司，让对方随便转你买单',
+'请一次肠粉，加料加到对方说停','点一份冰粉，连续两天各点一次','请一次烤鱼，鱼刺你挑干净再端过去',
+'点一份手抓饼，连点两天','请一次螺蛳粉，味道你自己扛','点一份银耳羹，甜度按对方要求',
+'请一次小笼包，醋你倒笼你端','点一份豆奶，连续两天都要热的','请一次生煎，汤汁烫到你负责提醒',
+'点一份烤红薯，剥好递过去','请一次甜品，对方点两份你只能看着','点一份章鱼小丸子，连点两天',
+'请一次煲仔饭，锅巴全留给对方','点一份凉皮，辣度按对方要求翻倍','请一次关东煮，对方指哪你拿哪',
+'点一份卤味，选对方爱吃的你不爱吃的','请一次糖水，连请两天','点一份提拉米苏，只买一块给对方',
+'请一次早茶，你排队等位不许抱怨','点一份手撕面包，掰好递给对方','请一次鱼，刺你挑完再端过去',
+'点一份果汁不加水，连点两天','请一次饭，全程由对方点菜你只管付钱','点一份早餐，连续三天都要送到',
+'请一次面，加料加到对方说够','点一份气泡水要冰的，连点两天','请一次下午茶，时间地点对方定',
+'点一份蛋挞，出炉趁热送到','请一次烧烤，辣椒按对方要求刷','点一份榴莲，味道你自己扛完',
+'请一次粥，早上端过去不许叫醒对方','点一份巧克力，只给对方不给自己','请一次寿司，转盘转到什么买什么',
+'点一份西瓜，切好冰好才准送','请一次手抓饼，加蛋加肠按对方要求','点一份草莓，挑最贵那一盒',
+'请一次铁板烧，你负责等','点一份烧仙草，连点两天','请一次云吞面，醋和辣都由对方定',
+'点一份椰汁西米露，只给对方','请一次车仔面，配料全听对方的','点一份芒果班戟，连点两天','点一份杨枝甘露，只给对方']},
+{c:'寄送',list:[
+'寄一盒对方爱吃的零食','寄一束花到对方公司','寄一张手写明信片','寄一封信，认真写完',
+'寄一份家乡特产','寄一本你读过的书，写批注','寄一个小玩偶，让它陪着','寄一盒巧克力',
+'寄一件你的同款卫衣','寄一张你们的合照，洗出来','寄一套对方的护肤品补货','寄一个杯子，成对的那款',
+'寄一包对方爱喝的茶','寄一盒手工饼干','寄一条围巾，天冷时用','寄一双袜子，可爱的那种',
+'寄一个手机支架','寄一个暖手宝','寄一盒面膜，一起敷','寄一个香薰',
+'寄一个小挂饰','寄一本手账本','寄一套贴纸','寄一个钥匙扣，成对的',
+'寄一张拼图，下次一起拼','寄一个小夜灯','寄一盒糖果','寄一份对方小时候爱吃的零食',
+'寄一件你挑的衣服，尺码你负责','寄一张你们看过的电影票根','寄一个冰箱贴','寄一包咖啡挂耳',
+'寄一个眼罩','寄一双拖鞋，成对的','寄一个抱枕','寄一盒润喉糖',
+'寄一张你手绘的地图','寄一个刻字的小物件','寄一盒对方提过想试的东西','寄一本装满照片的相册',
+'寄一套情侣手机壳','寄一张你写的优惠券','寄一个毛绒挂件','寄一份季节限定的点心',
+'寄一张你画的画','寄一个手编手环','寄一盒花茶','寄一张标好纪念日的日历',
+'寄一个小音箱','寄一套睡衣，成对的','寄一包对方爱吃的辣条','寄一个行李牌，下次一起用',
+'寄一张你拍的照片并装框','寄一个刻着对方名字的杯子','寄一份提前到的生日礼物','寄一盒马卡龙',
+'寄一条手链','寄一份你做的甜点','寄一张欠条，写明下次兑现什么','寄一个神秘小盒，附一张提示卡']},
+{c:'云陪',list:[
+'连麦一小时，中途不许挂也不许静音','视频一小时，只能由对方决定何时结束','陪对方看一整部你不喜欢的电影，不许快进',
+'连麦到对方睡着，你不准先挂','陪对方看剧两集，边看边回答提问','视频陪对方加班，你不准离开画面',
+'连麦三小时各做各的，随叫随到','陪对方打游戏到赢一局，输了继续','视频里陪对方吃饭，你只能吃对方点的',
+'陪对方听一整张你不喜欢的专辑','连麦散步一小时，沉默不许超过一分钟','视频陪对方自习两小时，不许玩手机',
+'陪对方看球赛全场，不许吐槽','连麦做运动，对方喊停才能停','视频陪对方整理房间，全程听指挥',
+'陪对方逛线上商城一小时，随叫随到','连麦看直播，不许快进也不许退出','视频陪对方做饭，全程打下手',
+'陪对方玩线上游戏直到对方赢','连麦四小时，对方随时可以要求你说话','视频陪对方等快递，不许中途离开',
+'陪对方看一部纪录片，看完要复述','连麦学习两小时，中途抽查','视频陪对方拆快递并全程解说',
+'陪对方看一场你不感兴趣的演出回放','连麦敷面膜二十分钟，不许提前撕','视频陪对方健身，动作要标准',
+'陪对方听播客一整期，中途提问要答','连麦玩桌游到对方赢为止','视频陪对方写手账并听指挥',
+'陪对方看综艺两期，要给出评价','连麦三小时，对方可以要求你做任何无害的事','视频陪对方排队，镜头不许移开',
+'陪对方看一部恐怖片，你不准先关','连麦做拉伸半小时，边做边认错','视频陪对方吃夜宵，你只能吃一半',
+'陪对方逛线上书店并买一本对方选的书','连麦玩成语接龙，输一次加一个惩罚','视频陪对方整理照片并听讲解',
+'陪对方看一次线上展，全程提问要答','连麦两小时，对方可以随时点歌你唱','视频陪对方护肤，步骤按对方说的做',
+'陪对方听一整场演唱会回放，不许跳过','连麦玩你画我猜，你画满十轮','视频陪对方做早餐，全程听指挥',
+'陪对方看一次你不爱吃的东西吃播','连麦四小时，中途离开一次加罚一小时','视频陪对方工作，你只能做对方布置的事',
+'陪对方看一部三小时的电影，中途不许看手机','连麦玩猜歌，你哼满十首','视频陪对方整理衣柜并给建议',
+'陪对方看一次线上课程并做笔记','连麦两小时，对方可以要求你复述任何话','视频陪对方泡脚，你也要泡',
+'陪对方听一整张专辑并说出每首感受','连麦玩谁是卧底到你输为止','视频陪对方做饭，你负责洗自己的碗',
+'陪对方看一次烟花直播，不许中途走','连麦三小时，随叫随到不许装没听见','视频陪对方写计划并全程配合',
+'陪对方看一次你不喜欢的主播一小时','连麦做瑜伽，动作不标准要重做','视频陪对方吃一餐，菜单对方定',
+'陪对方看一次线上博物馆并听讲解','连麦两小时，你只能回答不能反问','视频陪对方整理书桌，标准对方定',
+'陪对方听一整期节目并回答提问','连麦玩海龟汤到你输为止','视频陪对方做任何对方想做的一小时',
+'陪对方看一次日出直播，中途不许睡']},
+{c:'表达',list:[
+'写不少于三百字的检讨，逐条说明错在哪','发一段不少于三分钟的语音认错，不许含糊','说出对方十个优点，说不齐就重来',
+'手写一份检讨拍照发过去，字要工整','录一段视频认错，不许笑场','视频里说十遍这次是我不对',
+'把这次的事写清楚并发给对方确认','发一条仅对方可见的认错动态','把对方近三天说过的话复述一遍',
+'连发七天早安，漏一天补两天','连发七天晚安，每天都要有新内容','说出对方二十个小习惯，说错一个重来',
+'把你们的时间线从头讲一遍，不许跳','写一封五百字的信，只写自己的问题','把对方的十个要求复述并逐条答应',
+'发一张你最丑的自拍，对方有权保存','把这次的经过讲给对方听，不准省略','录一段语音，把对方的优点说满五分钟',
+'说出你从认识到现在记得的所有日期','把对方的照片设为聊天背景一周','给对方写一张欠条，写明你欠什么',
+'发一条仅对方可见的认错朋友圈','把对方的口头禅模仿十遍发语音','说三十句不重复的夸奖，卡壳就重来',
+'把你手机里对方的照片数一遍并报数','写一封致歉信，用最正式的格式','把这次的教训写成三条并背下来',
+'连说十遍我听你的，语气要认真','把对方的生日纪念日第一次见面日全背出来','发一段视频，对着镜头鞠躬道歉',
+'写出对方的十个喜好，写错一个罚重写','把你们的聊天记录翻到底并念一条出来','用最肉麻的语气说一段认错的话',
+'把这次吵架写成检讨书并签字拍照','说出对方为你做过的十件事，说不全就认罚','给对方写一份保证书，内容对方定',
+'发一张你哭脸的照片，装的也算','把对方的备注改成我最不该惹的人一天','连发十条消息道歉，每条都要不同',
+'把这次吵架的经过写成第三人称故事','说出五个你该改的毛病并给出时间表','录一段视频，把对方的优点唱出来',
+'把对方的照片设成手机壁纸三天','写一段一百字的自我批评并发给对方','把对方的三个要求写下来贴在可见处',
+'用方言认真道一次歉，不许笑','把你的错误写成清单，逐条念给对方听','发一张你低头认错的照片',
+'把这次的约定抄写三遍并拍照','说出对方最讨厌你做的三件事并承诺改','给对方写一张我错了的卡片并念出来',
+'把你的手机密码告诉对方一天','连说五分钟不重复的软话','把对方的照片设为头像三天',
+'写一份检讨，字数不少于五百','发一段语音，把对方的十个优点背出来','把你的错误写成歌词唱出来',
+'让对方随意翻看你手机三分钟','把这次的教训写成一句话设为签名一周','说出你最容易犯的三个错并给出对策',
+'给对方写一份整改计划，期限对方定','录一段视频，单膝下蹲认错','把对方说过最狠的一句话复述并回应',
+'连发三天道歉，每天都要有新说法','把这次的事写成日记并发给对方看','让对方决定你接下来一周的头像',
+'把你的缺点列十条并逐条道歉','发一张你写满道歉的纸的照片','把对方的要求复述三遍保证不忘','给对方念一遍你写下的整改保证']},
+{c:'跑腿',list:[
+'帮对方跑腿一整天，随叫随到','帮对方处理三件琐事，不许抱怨','帮对方查资料并整理成文档',
+'帮对方订好接下来一周的所有安排','帮对方缴清所有待缴费用','帮对方整理一份完整的攻略',
+'帮对方抢一次票，抢不到继续抢','帮对方做一份详细预算表','帮对方整理手机相册并分类',
+'帮对方备份所有照片并汇报','帮对方记一周的日程并每天提醒','帮对方比价十家并给出结论',
+'帮对方写一封邮件或文案','帮对方整理一次简历或材料','帮对方预约并跟进所有事项',
+'帮对方做一份购物清单并下单','帮对方清理手机内存并汇报','帮对方查路线并截图发过去',
+'帮对方设置十个提醒事项','帮对方跑一次线上客服流程','帮对方整理云盘并归档',
+'帮对方订票并选到对方满意的座位','帮对方查证件要求并列出清单','帮对方算好时差并做成表',
+'帮对方处理一次退换货','帮对方整理一份待办并跟进完成','帮对方做一份健康提醒表',
+'帮对方找三家候选并给出推荐','帮对方订好一次出行的全部环节','帮对方整理一次聊天记录重点',
+'帮对方查一次政策或规定并解释','帮对方做一份学习或工作计划','帮对方清理订阅和自动扣费',
+'帮对方整理一次衣柜清单','帮对方写一段祝福或发言','帮对方查一次快递并处理异常',
+'帮对方做一份记账表并汇总','帮对方找一首对方描述但记不清的歌','帮对方整理一次收藏夹',
+'帮对方预约并线上陪同完成','帮对方写一份检讨的提纲给自己用','帮对方查一次价格走势并建议',
+'帮对方做一份旅行时间轴','帮对方整理一次通讯录','帮对方处理一次投诉或反馈',
+'帮对方找一部对方描述的老电影','帮对方做一份提醒清单并执行一周','帮对方核对一次账单',
+'帮对方准备一次线上会议的资料','帮对方跑腿一周，所有杂事归你']},
+{c:'趣味',list:[
+'用对方最讨厌的语气说话一分钟','连麦唱儿歌三首，不许停','把你的检讨用小学生的语气念出来',
+'用夸张的哭腔求原谅一分钟','模仿对方生气时的样子，要演到位','用客服语气回答对方所有问题一小时',
+'把你的错误编成顺口溜念出来','连麦做五十个深蹲，边做边认错','用播音腔朗读你的检讨书',
+'把道歉的话用三种方言各说一遍','对着镜头做一分钟鬼脸，对方截图保存','用说唱节奏把错误说清楚，不许停',
+'模仿一次对方骂你的样子，克制版','把你的保证书写成合同格式并签字','连麦学猫叫二十声',
+'用最肉麻的语气说十遍对不起','把这次的事演成一段独角戏','用新闻联播腔播报你的错误',
+'连麦做平板支撑一分钟，中途认错','把检讨写成藏头诗，藏对方名字','用外语说一遍道歉，说错重来',
+'模仿五种动物叫声，每一种都要像','把你的错误画成漫画并讲解','连麦背乘法口诀，错一次加一句道歉',
+'用撒娇语气求原谅，直到对方说停','把道歉的话唱成一首歌','用律师语气承认你的全部过错',
+'连麦做二十个仰卧起坐，边做边数错处','把你的保证书用最大声念出来','模仿对方的口头禅十遍，不许笑',
+'把这次的事写成新闻稿并朗读','连麦唱摇篮曲，对方不睡不许停','用最夸张的表情感叹自己的错误',
+'把检讨写成三行情书，道歉版','连麦玩你画我猜，你画满十轮不许说话','用机器人语气认错，直到对方满意',
+'把你的错误列成表格并逐条解释','连麦做一组拉伸，边做边说对不起','用戏剧腔演一遍你认错的全过程',
+'把道歉的话写成弹幕念出来让对方笑']},
+{c:'承诺',list:[
+'无条件答应对方一个小要求','一天内不许反驳对方','今天所有决定权给对方','连续三天说早安',
+'连续三天说晚安','一个月内主动道歉一次','一天内不提这件事','连续七天发一句好话',
+'这一周对方说什么都不抬杠','一个月内请对方吃一次','一天内负责所有线上跑腿','这一周每晚视频一次',
+'一个月内不提这次吵架','今天所有选择由对方决定','这一周负责叫对方起床','连续三天主动发一张照片',
+'这一周每天夸对方一次','一个月内安排一次见面','一天内不抱怨','这一周负责提醒对方吃饭',
+'连续三天讲一个笑话','这一周视频时不玩手机','一个月内给对方寄一次东西','今天云陪时间由对方定',
+'这一周负责订外卖，你付','连续三天发一句鼓励','这一周负责记两人的日程','一天内不碰手机，视频除外',
+'这一周给对方读一次东西','一个月内一起完成一件线上小事','今天视频里全程看着对方','这一周负责找下次见面的地方',
+'连续三天说一句软话','这一周负责哄对方睡觉','一个月内给对方写一封信','今天不挂对方的电话',
+'这一周负责算时差约时间','连续三天分享一首歌','这一周负责记录吵架次数，目标为零','这周所有提醒都由你发出']},
+{c:'见面时',m:1,list:[
+'下次见面给对方按摩 30 分钟','下次见面请吃一顿不看价格的','下次见面带对方去个没去过的地方','下次见面做一顿饭给对方',
+'下次见面买早餐送到床边','下次见面帮对方背包一整天','下次见面陪逛一整天不说累','下次见面给对方洗一次头',
+'下次见面包揽所有家务','下次见面给对方拎所有东西','下次见面陪看一场你不爱的电影','下次见面给对方剥一整袋虾',
+'下次见面陪排队不催','下次见面给对方系一次鞋带','下次见面负责所有行程安排','下次见面撑伞，伞往对方那边斜',
+'下次见面重走第一次约会的路','下次见面给对方拍一天的照片','下次见面负责所有买单','下次见面陪对方去不喜欢的地方',
+'下次见面做一次早餐','下次见面帮对方整理一次房间','下次见面陪坐一次摩天轮','下次见面当场送一束花',
+'下次见面负责拎行李','下次见面陪看一次日落','下次见面给对方涂护手霜','下次见面负责订所有的位',
+'下次见面陪打一次球，让着点','下次见面当一天司机或导航','下次见面陪逛超市全程跟着','下次见面给对方吹一次头发',
+'下次见面负责叫醒服务','下次见面陪去一次游乐园','下次见面买对方提过的东西','下次见面负责所有拍照',
+'下次见面陪吃一次路边摊','下次见面做一次夜宵','下次见面负责所有排队','下次见面陪看一次展',
+'下次见面洗好水果端过来','下次见面负责安排一次约会','下次见面陪坐一次缆车','下次见面擦汗递纸巾',
+'下次见面负责家务一整周','下次见面陪去一次温泉','下次见面给对方泡一次脚','下次见面提所有购物袋',
+'下次见面走一段没走过的路','下次见面当一天摄影师','下次见面做一顿三个菜的饭','下次见面陪看一场球赛',
+'下次见面给对方盖一次被子','下次见面负责订机票酒店','下次见面陪逛书店不催','下次见面剥好水果递过去',
+'下次见面负责整理对方行李','下次见面陪看一次日出','下次见面给一个长时间的拥抱','下次见面把约定当面再说一遍']},
+{c:'作息',list:[
+'连麦到对方睡着，你后挂且不许静音','连续一周早起给对方发早安语音','连续一周睡前讲一个故事',
+'今晚陪对方熬夜，明天你负责叫醒','连续三天给对方点早餐并拍照','今晚不许先挂，等对方说晚安',
+'连续一周每天提醒对方吃饭三次','明早六点给对方发一条道歉消息','连续三天睡前复述一遍你的保证',
+'今晚陪对方做完整套睡前流程','连续一周每晚视频半小时，不许缺席','今晚等对方睡着你才能睡',
+'连续三天早起给对方发窗外的天','今晚给对方唱三首歌才准睡','连续一周每天给对方发一张自拍',
+'明早给对方点咖啡并确认送达','连续三天睡前读一段对方选的文字','今晚陪对方聊到对方说停',
+'连续一周每晚说一句不重复的软话','明早给对方发一段语音认错','连续三天给对方发午餐照片',
+'今晚给对方写一段今天的复盘','连续一周每天给对方发一句鼓励','明早给对方发一张出门前的照片',
+'连续三天睡前汇报你今天改了什么','今晚陪对方做完所有睡前事项','连续一周每天给对方道三次安',
+'明早给对方点一份早餐并备注道歉','连续三天给对方发一张你的手写字','今晚把明天的安排报给对方审批']},
+{c:'手作',list:[
+'手写一张小纸条拍照发过去','折一个纸鹤拍给对方','画一张对方的速写并拍照','做一张手写优惠券',
+'写一首三行诗发给对方','把你们的照片剪成一段视频','画一张你们的手绘地图','折一束纸花拍照发过去',
+'写一张明信片寄过去','做一张月历标好日子','用便利贴拼一句话拍照','编一个手环寄过去',
+'写一张愿望清单拍照发','用积木拼一个小礼物拍照','做一个手账页面拍照发','折一颗星星，攒够一瓶寄过去',
+'画一张你们未来的家','写一张道歉凭证并签名','做一张最佳伴侣证书拍照','做一个歌单，每首写一句理由',
+'录一段视频讲你们的故事','写一份我们的一百件小事','画一张对方的表情包','做一张拼图照片',
+'写一张倒计时卡片，每天更新','做一份下次见面清单发过去','写一张欠条，写明兑现内容','画一张你们的时间轴',
+'写一张今天的心情明信片','录一段话说给未来的对方听']}
+];
+
+const ACT_GROUPS=[
+{c:'真心话',list:[
+'说出你最怕失去我的什么','你第一次觉得离不开我是哪一刻','说一件你从没告诉过我的事','你最想我改掉的一个习惯是什么',
+'说一次你偷偷哭过的理由','你有过哪一瞬间想过分手吗','说一件你对我撒过的小谎','你最受不了我哪一点',
+'说出你手机里舍不得删的一张照片','你第一次见我时给我打几分','说一件你觉得我做得比你好的事','你最想和我一起去的地方是哪里',
+'说一次你对我们的未来感到不安的时刻','你有没有偷偷比较过我和别人','说出你最想听我对你说的一句话','你最怕我哪天对你说哪句话',
+'说一件你忍了很久没说的事','你觉得我们哪一点最不像情侣','说出一个你希望我主动做的事','你最怀念我们哪一段时间',
+'说一件你为我做过但不求回报的事','你上次对我失望是因为什么','说出你最想被我理解的一点','你觉得我哪句话最伤过你',
+'说一件你一直想问我却没问的事','你最想让我记住的关于你的事','说出你最喜欢的我的一个小动作','你有没有对我隐瞒过什么',
+'说一次你因为我而骄傲的时刻','你最担心我们之间会出现什么问题','说出你觉得最浪漫的一件事','你希望十年后的我们是什么样',
+'说一件你后悔对我说的话','你最想和我一起改掉的习惯','说出你平时不好意思说的需求','你最怕我做什么事',
+'说一次你觉得自己很爱我的瞬间','你希望我怎么表达爱意','说出你最想被夸的地方','你有没有吃醋到睡不着过',
+'说一件你觉得我忽略你的事','你最想和我一起完成但未完成的事','说出你对婚姻真实的想法','你最喜欢我叫你什么',
+'说一次你被我惊艳到的时刻','你最不能接受我的什么缺点','说出你最想和我一起变老的理由','你有没有为我哭过，因为什么',
+'说一件你觉得我很可爱的事','你最希望我多陪你做什么','说出你最怕听到的三个字','你觉得我们最合拍的一点是什么',
+'说一次你主动找我的真实原因','你最想让我学会的一道菜','说出你最不想让我知道的事','你最感动的一次是我做了什么',
+'说一件你愿意为我放弃的事','你希望我怎么哄你','说出你最讨厌的我的口头禅','你有没有偷偷看过我的手机',
+'说一次你觉得我们很像夫妻的时刻','你最想让我改的一句话','说出你最想和我一起养的宠物','你最怕我哪天不爱你了的表现',
+'说一件你为我改变过的事','你最想和我一起去的一次旅行','说出你最想被我照顾的场景','你觉得我最吸引你的一点是什么',
+'说一次你对我撒娇的原因','你最希望能和我一起坚持的事','说出你对异地最难受的时刻','你最想让我给你一个什么承诺',
+'说一件你觉得我做得不够的事','你最喜欢我们之间的什么仪式','说出你最想听我道歉的话','你有没有羡慕过别人的对象',
+'说一次你为我担心到睡不着的时刻','你最想和我一起看的电影','说出你最想被我记住的瞬间','你最不喜欢我哪一次的沉默',
+'说一件你觉得我很厉害的事','你希望我怎么对你家人','说出你最想和我一起住的城市','你最怕我们变成什么样',
+'说一次你主动让步的原因','你最想让我陪你度过的一个节日','说出你最想被我夸的一次','你觉得我们最需要改善的一点',
+'说一件你希望我主动道歉的事','你最想和我一起养成的小习惯','说出你最想被我保护的时候','你有没有因为我想过未来',
+'说一次你觉得自己被我偏爱的瞬间','你最想让我为你做的一件小事','说出你最怕我们之间的距离','你最喜欢我身上的什么味道',
+'说一次你对我们的信心来自哪里','你最想和我一起慢慢变老的方式','说出你最想被我紧紧抱住的时刻','你最想让我答应的一个条件',
+'说一件你从没对任何人说过的事','你最希望我能懂你的哪一点','说出你最想和我一起完成的清单','你最怕我忘了我们哪件事',
+'说一次你觉得自己很幸福的瞬间','说出你最想和我一起度过的一天','你最怕我哪一句话说出口','说一件你希望我永远别改的事','你有没有偷偷为我做过什么准备','说出你最想被我记住的一句话']},
+{c:'大冒险',list:[
+'视频里做一分钟不间断的告白','连麦唱一首情歌，跑调也要唱完','用方言说一段土味情话','视频里学猫叫十声',
+'给对方表演一个才艺，不许推脱','连麦朗读一段你写的检讨','视频里做十个深蹲并喊对方名字','用播音腔念一段广告词',
+'视频里模仿对方生气时的样子','连麦唱摇篮曲到对方睡着','对着镜头说十遍我喜欢你','视频里用嘴哼一首歌的旋律',
+'连麦背一遍乘法口诀表','视频里单脚站立一分钟','用夸张的语气念一遍外卖菜单','连麦玩你画我猜，你全程画',
+'视频里比心并保持十秒','用外语说一句我爱你','连麦模仿三种动物的叫声','视频里闭上眼画一张对方的脸',
+'用说唱节奏说一段道歉词','连麦做一分钟的自我介绍','视频里表演一次求婚','用客服语气回答对方一分钟',
+'连麦说绕口令，错一次重来','视频里给对方飞吻十次','用新闻腔播报你今天的行程','连麦一口气说出对方的十个优点',
+'视频里做鬼脸并让对方截图','用歌声点名自己的三个缺点','连麦玩成语接龙，输了要认','视频里把头发弄乱再整理好',
+'用撒娇语气连说十句话','连麦模仿明星说话一分钟','视频里展示你最丑的睡姿','一口气读完一段长句不换气',
+'连麦唱两首儿歌','视频里对镜头放电十秒','用翻译腔说一段情话','连麦数到一百，中间不许错',
+'视频里跳一段即兴舞蹈','用说书人的语气讲今天的事','连麦给对方讲一个冷笑话','视频里用三个表情表达爱意',
+'连说十句不重复的夸奖','连麦模仿对方打电话的样子','视频里做五个俯卧撑','用小学生语气写检讨并念出来',
+'连麦玩猜谜，你出题对方猜','视频里给对方一个隔空拥抱','用广告腔夸对方三十秒','连麦朗读一条你们的旧消息',
+'视频里把上衣反穿一分钟','用古风语气说一段告白','连麦念一段天气预报给对方听','视频里学婴儿哭十秒',
+'一口气说出你们所有的纪念日','连麦玩真心话接龙，你先答','视频里对着镜头梳头三十秒','用机器人语气说我爱你',
+'连麦背一首古诗，错一字重来','视频里闭眼唱完一首歌','用撒娇语气说一百遍想你','连麦模仿五种不同的笑声',
+'视频里做一次认真的自我介绍','用外卖小哥的语气送一句祝福','连麦说出你手机密码前三位','视频里展示你的房间全景',
+'用戏剧腔演一遍你们上次吵架','连麦玩猜歌，你哼对方猜','视频里给对方画一张速写','用导航语音说一段情话',
+'连麦唱一次生日歌，不在生日','视频里做一分钟鬼脸合集','用幼儿园老师的语气夸对方','连麦说出你最尴尬的一件事',
+'视频里表演一个简单魔术','用播音腔读一条你的聊天记录','连麦玩石头剪刀布，输了要认','视频里比心并说一句情话',
+'用家乡话认真表白一次','连麦讲一个不太吓人的故事','视频里展示你的早餐并解说','用夸张的哭腔说一句撒娇话',
+'连麦说出你的三个小秘密','视频里教对方一套隔空按摩','用医生语气开一份爱情处方','连麦念一封你写给对方的信',
+'视频里做一次自我介绍加才艺','用律师语气为你的爱辩护','连麦玩你问我答，不许说不','视频里展示你手写的一段字',
+'用导游语气介绍你们的爱情','连麦唱一首对方指定的歌','连麦模仿对方笑的声音十次','视频里给对方表演一段哑剧','用三个字概括你这次的错误并重复十遍','连麦给对方讲一个你现编的故事','视频里给对方展示你最乱的角落','跳一段机器人舞步并当场认错']},
+{c:'情侣任务',list:[
+'一起云看一部电影并同步讨论','各自拍一张今天的天空交换','一起做同一道菜并比较成品','同时给对方发一张自拍',
+'一起听同一首歌并说感受','各自写一段今天的心情交换','一起数对方照片里的笑脸','同时看同一本书的同一页',
+'一起给对方列一个优点清单','各自拍一张晚餐照片交换','连麦各自做十分钟的拉伸','一起给未来的对方写一句话',
+'各自找出一张最旧的合照','同时说出一个想去的城市','一起回忆第一次约会的细节','各自画一张对方的简笔画',
+'一起给对方选一首代表歌','同时说出对方的一个缺点','各自整理手机里对方的照片','一起做一个三分钟的计划',
+'同时给对方发一个表情包','各自说出今天最开心的事','一起给未来的家列一份清单','同时拍一张窗外的风景',
+'各自写一段给十年后的你们','一起猜对方今天吃了什么','同时说出最喜欢对方哪一点','各自给对方出一个小挑战',
+'一起听雨声十分钟','同时给对方发一张今天的鞋','各自说出想一起学的技能','一起给对方写一张优惠券',
+'同时拍一张你现在的桌面','各自列出三个共同的愿望','一起看一次日落并拍照','同时给对方发一句方言情话',
+'各自说出第一次心动瞬间','一起给对方做一份歌单','同时喝一口水并隔空干杯','各自说出最想一起去的地方',
+'一起给对方写一封三行信','同时给对方发一张手写的字','各自说出对方最可爱的一刻','一起做一次云散步',
+'同时给对方发一张今晚的月色','各自说出今年的一个小目标','一起给对方列一份旅行清单','同时拍一张今天的衣服',
+'各自说出对方最让你安心的话','一起给对方出一道默契题','同时给对方发一个拥抱的表情','各自说出想一起变老的样子',
+'一起回忆最难忘的一次争执','同时给对方发一张你的早餐','各自说出对方的三个小习惯','一起给对方写一张明信片',
+'同时说出最喜欢的一首歌','各自拍一张你今天的笑容','一起给对方列一份愿望清单','同时给对方发一张你的手',
+'各自说出对方最让你感动的事','一起做一次三十分钟的云自习','同时给对方发一张你的宠物','各自说出想一起完成的一件事',
+'一起给对方写一段鼓励的话','同时拍一张你现在的窗外','各自说出对方的一个口头禅','一起回忆第一次说我爱你的场景',
+'同时给对方发一张你的书桌','各自说出最怕对方做的事','一起给对方做一张证书','同时给对方发一句土味情话',
+'各自说出想一起看的展','一起给对方列一份日常清单','同时拍一张你今天的午餐','各自说出对方最吸引你的一点',
+'一起做一次云做饭','同时给对方发一张你的城市','各自说出想一起去的一间店','一起给对方写一段睡前的话',
+'同时给对方发一张你的影子','各自说出最想一起做的事','一起回忆最开心的一次旅行','同时给对方发一张你的天空',
+'各自说出对方最让你骄傲的事','一起给对方列一份电影清单','同时拍一张你今晚的路灯','各自说出想一起养的东西',
+'一起做一次二十分钟的云健身','同时给对方发一张你的水杯','各自说出对方的一个小怪癖','一起给对方写一张心情卡片',
+'同时给对方发一句早安并配图','各自说出最想被照顾的时刻','一起回忆最浪漫的一次拥抱','同时给对方发一张你的床',
+'各自说出想一起度过的季节','一起给对方列一份书单','同时拍一张今天的雨','各自说出对方最让你心动的一刻',
+'一起给对方写一段道歉的话','同时给对方发一张你的钥匙','各自说出想一起完成的挑战','一起给对方列一份歌单并交换','一起听一整张专辑并说出每首的感受','各自说出对方最让你安心的一个动作','一起给对方写一张感谢卡','同时给对方发一张你今天走过的路','各自说出想和对方一起做的早餐','一起回忆最让你心动的一次约会']},
+{c:'情话',list:[
+'我想你了，程度是今天的第三十七次','你是我所有计划里唯一的常量','别人问我为什么笑，我说想起你','今天的月亮很好看，但不如你',
+'我想把所有的晚安都留给你','遇到你之后，我才相信来日方长','你不用很好，我爱你就行','我的时区里只有你在的地方',
+'想和你一起浪费所有的时间','你是我的例外，也是我的偏爱','我把想你这件事做得很好','今天的风很温柔，像你',
+'我的所有勇敢都和你有关','想把你藏起来，又想向全世界炫耀','你是我每天醒来的第一个念头','我愿意为你改掉所有的坏毛病',
+'和你在一起的每一秒都值得收藏','你是我的软肋，也是我的铠甲','我想和你过那种平淡的日子','世界很大，我只想走向你',
+'你的名字是我写过最好看的字','我想成为你疲惫时的归处','你笑一次，我就多喜欢你一点','所有的浪漫都想和你一起完成',
+'我攒了一辈子的温柔给你','你是我不需要理由的偏袒','想在你的未来里占据一整页','你是我所有歌词里藏的那个人',
+'我这辈子最幸运的事是遇见你','你是我想要回家的理由','我想把每一天都过成纪念日','你的声音是我最喜欢听的声音',
+'我愿意把最后一个饺子留给你','和你聊天是我一天里最好的部分','你是我所有的不将就','我想牵着你的手走很远的路',
+'你是我平淡生活里的光','我所有的计划里都有你的位置','想和你一起慢慢变老，不着急','你是我最想保护的人',
+'我的温柔不多，全给你了','你是我起床的动力','我想把星星都摘给你','和你在一起我才觉得自己很好',
+'你是我唯一想共度余生的人','我想成为你遇到困难第一个想到的人','你的存在本身就是一种安慰','我想和你一起看所有的日出',
+'你是我所有好运的来源','我愿意为你变成一个更好的人','想把你写进我所有的未来里','你是我最舍不得分享的人',
+'我想和你一起吃很多顿饭','你在的时候我就不怕了','你是我最想守护的那个人','我想把所有的耐心都留给你',
+'和你有关的日子都值得纪念','你是我所有的心甘情愿','我想和你一起度过所有的季节','你是我放下骄傲的理由',
+'我想成为你每天最后一个说话的人','你是我唯一想耍赖的人','我想和你一起慢慢数日子','你的眼睛是我最想看的地方',
+'我愿意为你走很远的路','你是我所有的偏爱和例外','我想和你一起变老，然后笑着回忆','你是我最想拥抱的人',
+'我想把你的手握一辈子','和你在一起我才相信永远','你是我每天最想见的人','我想成为你的安全感',
+'你是我最想宠着的人','我想和你一起过所有的节日','你是我所有故事的主角','我想把最好的都留给你',
+'你是我最想依靠的人','我想和你一起看遍所有的风景','你是我最想守护的温柔','我想成为你疲惫时的依靠',
+'你是我所有的不后悔','我想和你一起慢慢走完这一生','你是我最想听见的声音','我想把所有的情话都说给你听',
+'你是我唯一的偏爱','我想和你一起慢慢吃饭','你是我最想珍惜的礼物','我想成为你所有快乐的一部分',
+'你是我最想一起发呆的人','我想和你一起把日子过成诗','你是我最想一起变老的人','我想把所有的温柔都给你',
+'你是我所有的来日方长','我想和你一起数遍所有的星星','你是我最想一起淋雨的人','我想成为你所有难过的终点',
+'你是我最想一起看雪的人','我想和你一起慢慢变老，然后说值得','你是我所有的心之所向','我想和你一起把今天过完，再说明天',
+'你是我最想一起醒来的人','我想把所有的幸运都分给你','你是我所有温柔的归处','我想和你一起，把每个平凡的日子过好',
+'你是我最想一起走过一生的人','你是我最想一起老去的人','我想成为你所有疲惫时的答案','和你有关的明天我都期待','你是我所有温柔的理由']},
+{c:'默契问答',list:[
+'对方最喜欢的颜色是什么','对方最爱吃的一道菜','对方最讨厌的食物','对方睡前必做的一件事',
+'对方最常听的一首歌','对方最想去的地方','对方最怕的东西','对方的生日是几月几日',
+'对方的鞋码是多少','对方最常说的一句话','对方最喜欢的水果','对方最讨厌的天气',
+'对方通常几点起床','对方最喜欢的电影','对方最常用的表情包','对方最在意的一件事',
+'对方最常去的地方','对方最想养的宠物','对方最喜欢的季节','对方最不能接受的事',
+'对方喝奶茶要几分糖','对方最常点的外卖','对方最喜欢的颜色搭配','对方最讨厌的声音',
+'对方最喜欢的小动物','对方最想学的一项技能','对方的手机壁纸是什么','对方最常用的社交软件',
+'对方最想去的一家餐厅','对方最难改掉的习惯','对方最喜欢的运动','对方最怕的动物',
+'对方最喜欢的一本书','对方最常穿的颜色','对方最喜欢的时间段','对方最讨厌的家务',
+'对方最喜欢的零食','对方最想去的城市','对方最常用的口头禅','对方最喜欢的音乐类型',
+'对方最不喜欢的一句话','对方最喜欢的花','对方最常犯的小错误','对方最想要的礼物',
+'对方最讨厌的行为','对方在家里最喜欢的位置','对方最常熬夜的原因','对方最喜欢的饮料',
+'对方最怕听到的声音','对方最喜欢的一场电影','对方最想去的一个国家','对方最常用的交通工具',
+'对方最讨厌的气味','对方最喜欢的一件衣服','对方最想一起做的事','对方最常忘记的事情',
+'对方最喜欢的一部剧','对方最喜欢的一句歌词','对方最不喜欢吃的水果','对方最想改变的一个习惯',
+'对方最喜欢的一个节日','对方最常用的一句问候','对方最讨厌的一种人','对方最喜欢的一种天气',
+'对方最想去的一间店','对方最常听的一个节目','对方最喜欢的一个颜色组合','对方最常用的一个表情',
+'对方最想拥有的一个东西','对方最害怕的一个场景','对方最喜欢的一段音乐','对方最常做的一个动作',
+'对方最不喜欢的一个季节','对方最想去的一座山或海','对方最喜欢的一道甜品','对方最常用的一个词',
+'对方最想学的一门语言','对方最喜欢的一次旅行','对方最讨厌的一种做法','对方最常看的一类视频',
+'对方最喜欢的一件物品','对方最想改进的一点','对方最常用的一个软件','对方最喜欢的一种香气',
+'对方最想去的一次约会','对方最不喜欢的一个声音','对方最常有的一个小动作','对方最喜欢的一个瞬间',
+'对方最想对我说的第一句话','对方最希望我为他做的一件事','对方最不想让我做的一件事']}
+];
+
+const ACT=ACT_GROUPS.flatMap(g=>g.list.map(t=>({c:g.c,t:t})));
+const LV_BASE={表达:1,作息:1,趣味:1,云陪:2,跑腿:2,投喂:2,手作:3,承诺:3,寄送:4,见面时:5};
+const LV_OFF=[0,1,0,-1,0,1,-1,0];
+const POOL=POOL_GROUPS.flatMap(g=>g.list.map((t,i)=>{
+  let lv=(LV_BASE[g.c]||2)+LV_OFF[i%8];
+  if(g.m&&lv<3)lv=3;
+  lv=Math.min(5,Math.max(1,lv));
+  return {c:g.c,t:t,m:g.m?1:0,lv:lv};
+}));
+function renderFilters(){
+  const f=['全部','生活','想法','约定','待办','仅我看'];
+  document.getElementById('filters').innerHTML=f.map((x,i)=>
+    `<button class="chip${i===0?' on':''}" data-f="${x}">${x}</button>`).join('');
+}
+function renderQ(){
+  document.getElementById('qlist').innerHTML=QS.map(q=>
+    `<div class="qcard${q.r?' resolved':''}">
+      <div class="qt">${q.t}</div>
+      <div class="qrow">
+        <span class="qbadge ${q.f}">${q.ft}</span>
+        <span class="qbadge">${q.d}</span>
+        <span class="qbadge ${q.r?'ok':'wait'}">${q.r?'已翻篇':'还没翻篇'}</span>
+      </div>
+      <div class="pact">翻篇方式：${q.p}</div>
+    </div>`).join('');
+}
+const LVN={1:'小别扭',2:'有点气',3:'真的生气',4:'很受伤',5:'很严重'};
+const LVD={1:'撒个娇就能过去',2:'需要一点表示',3:'要认真哄一哄',4:'得拿出诚意',5:'需要一次郑重的补偿'};
+let curLv=2,qMo='all',qCat='全部';
+function poolView(){
+  return POOL.filter(p=>p.lv===curLv)
+    .filter(p=>qMo==='all'||(qMo==='now'?!p.m:p.m))
+    .filter(p=>qCat==='全部'||p.c===qCat);
+}
+function renderPool(){
+  const v=poolView();
+  document.getElementById('pool').innerHTML=(v.length?v.map((p,i)=>
+    `<div class="pi"><i>${i+1}</i><span>${p.t}</span><span style="margin-left:auto;font-size:10px;color:var(--ink-3);background:#F5F0EE;padding:2px 7px;border-radius:6px">${p.m?'见面时':'现在'}</span></div>`).join('')
+    :'<div style="font-size:12px;color:var(--ink-3);padding:12px 2px">这个组合下暂时没有，换个筛选试试</div>');
+  document.getElementById('poolCount').textContent=POOL.filter(p=>p.lv===curLv).length+' 条可选';
+  document.getElementById('poolCount2').textContent='共 '+v.length+' 条';
+}
+function renderCats(){
+  document.getElementById('catChips').innerHTML=['全部',...POOL_GROUPS.map(g=>g.c)].map(c=>
+    `<button class="chip${c===qCat?' on':''}" data-cat="${c}">${c}</button>`).join('');
+}
+function drawOne(force){
+  const v=poolView(); if(!v.length)return;
+  let n=Math.floor(Math.random()*v.length),cur=document.getElementById('drawTxt').textContent,g=0;
+  if(!force&&v.length>1){while(v[n].t===cur&&g++<20)n=Math.floor(Math.random()*v.length);}
+  const p=v[n],box=document.getElementById('drawBox');
+  box.classList.remove('flip');void box.offsetWidth;box.classList.add('flip');
+  setTimeout(()=>{
+    document.getElementById('drawTxt').textContent=p.t;
+    const lv=document.getElementById('drawLv');
+    lv.className='lv lv'+p.lv;lv.textContent=LVN[p.lv];
+    document.getElementById('drawMeta').textContent=p.c+' · '+(p.m?'下次见面':'现在就能做');
+  },240);
+}
+renderTodos();renderLists();renderPlans();renderFilters();renderQ();renderCats();renderPool();drawOne(true);
+document.querySelectorAll(".heat button").forEach(x=>x.classList.toggle("on",+x.dataset.lv===curLv));
+document.querySelectorAll(".heatnote").forEach(x=>x.textContent=LVD[curLv]);
+document.getElementById('recent').innerHTML=MEMOS.slice(0,3).map(memoCard).join('');
+document.getElementById('memos').innerHTML=MEMOS.map(memoCard).join('');
+
+/* ---------- 交互 ---------- */
+document.addEventListener('click',e=>{
+  const k=e.target.closest('[data-tick]');
+  if(k){const i=+k.dataset.tick;TODOS[i].d=!TODOS[i].d;renderTodos();return}
+  const l=e.target.closest('[data-li]');
+  if(l){const [n,i]=l.dataset.li.split('|');const L=LISTS.find(x=>x.n===n);L.items[i][2]=L.items[i][2]?0:1;renderLists();return}
+  const sw=e.target.closest('[data-sw]'); if(sw){sw.classList.toggle('on');return}
+  const gb=e.target.closest('[data-go]');
+  if(gb){const n=+gb.dataset.go;if(n===15){curLetter=null;curImgs=[];openLetter(0);return}go(n);return}
+  const afb=e.target.closest('[data-af]');
+  if(afb){
+    afb.parentNode.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));
+    afb.classList.add('on');af=afb.dataset.af;renderLib();return;
+  }
+  const ac=e.target.closest('[data-acat]');
+  if(ac){
+    ac.parentNode.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));
+    ac.classList.add('on');actCat=ac.dataset.acat;renderAct();actDraw();return;
+  }
+  const lc=e.target.closest('[data-libcat]');
+  if(lc){
+    lc.parentNode.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));
+    lc.classList.add('on');libCat=lc.dataset.libcat;renderLib();return;
+  }
+  const rw=e.target.closest('[data-rw]');
+  if(rw){
+    rw.parentNode.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));
+    rw.classList.add('on');ruleWho=rw.dataset.rw;renderRules();return;
+  }
+  const pw=e.target.closest('[data-pw]');
+  if(pw){
+    pw.parentNode.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));
+    pw.classList.add('on');phWho=pw.dataset.pw;renderPhotos();return;
+  }
+  if(e.target.closest('#phImport')){document.getElementById('phFile').click();return}
+  const op2=e.target.closest('[data-openp]');
+  if(op2){openPhoto(op2.dataset.openp);return}
+  if(e.target.closest('#lbClose')){closeLb();return}
+  const lbw=e.target.closest('.lb-who button');
+  if(lbw){
+    [...lbw.parentNode.children].forEach(x=>x.classList.remove('on'));
+    lbw.classList.add('on');
+    if(curPhoto){curPhoto.author=lbw.dataset.w;save();renderPhotos();}
+    return;
+  }
+  if(e.target.closest('#lbDel')){
+    if(curPhoto&&confirm('删除这张照片？')){
+      const id=curPhoto.id;
+      DB.photos=DB.photos.filter(x=>x.id!==id);
+      IDB.del(id);save();closeLb();renderPhotos();
+    }
+    return;
+  }
+  const c=e.target.closest('.chips .chip');
+  if(c){
+    c.parentNode.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));
+    c.classList.add('on');
+    if(c.dataset.mo){qMo=c.dataset.mo;renderPool();return}
+    if(c.dataset.cat){qCat=c.dataset.cat;renderPool();return}
+    return;
+  }
+  const hb=e.target.closest('.heat button');
+  if(hb){
+    curLv=+hb.dataset.lv;
+    document.querySelectorAll('.heat button').forEach(x=>x.classList.toggle('on',+x.dataset.lv===curLv));
+    document.querySelectorAll('.heatnote').forEach(x=>x.textContent=LVD[curLv]);
+    renderPool();drawOne(true);return;
+  }
+  if(e.target.closest('#drawBox')||e.target.closest('#redraw')){drawOne(false);return}
+  const s=e.target.closest('.seg button'); if(s){s.parentNode.querySelectorAll('button').forEach(x=>x.classList.remove('on'));s.classList.add('on');return}
+  const fb=e.target.closest('.fault button');
+  if(fb){fb.parentNode.querySelectorAll('button').forEach(x=>x.classList.remove('on'));fb.classList.add('on');return}
+
+  const pk=e.target.closest('.pick[data-pick] button');
+  if(pk){
+    const w=pk.closest('.pick'),k=w.dataset.pick;
+    if(k==='flow'||k==='pain'){w.querySelectorAll('button').forEach(x=>x.classList.remove('on'));pk.classList.add('on');cyForm[k]=+pk.dataset.v;}
+    else if(k==='mood'){w.querySelectorAll('button').forEach(x=>x.classList.remove('on'));pk.classList.add('on');cyForm.mood=pk.textContent;}
+    else{pk.classList.toggle('on');const v=pk.textContent,i=cyForm.sym.indexOf(v);if(i<0)cyForm.sym.push(v);else cyForm.sym.splice(i,1);}
+    return;
+  }
+  const toggleAct=(key,t)=>{const i=DB.act[key].indexOf(t);if(i<0)DB.act[key].push(t);else DB.act[key].splice(i,1);save();updActBtn();renderAct();renderLib();};
+  if(e.target.closest('#actAgain')){actDraw();return}
+  if(e.target.closest('#actFav')){if(curAct)toggleAct('fav',curAct.t);return}
+  if(e.target.closest('#actDone')){if(curAct)toggleAct('played',curAct.t);return}
+  const fv=e.target.closest('[data-fav]');
+  if(fv){toggleAct('fav',decodeURIComponent(fv.dataset.fav));return}
+  const pl=e.target.closest('[data-play]');
+  if(pl){toggleAct('played',decodeURIComponent(pl.dataset.play));return}
+  const cd=e.target.closest('[data-cycdel]');
+  if(cd){DB.cycle=DB.cycle.filter(r=>r.start!==cd.dataset.cycdel);save();renderCyc();renderHomeCyc();return}
+  if(e.target.closest('#cycSave')||e.target.closest('#cycSave2')){cycSave();return}
+  const op=e.target.closest('[data-open]');
+  if(op){openLetter(+op.dataset.open);return}
+  if(e.target.closest('#letSave')){saveLetter();return}
+  if(e.target.closest('#letDel')){delLetter();return}
+  const p2=e.target.closest('.pick[data-pick2] button');
+  if(p2){
+    const w=p2.closest('.pick'),k=w.dataset.pick2;
+    w.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+    p2.classList.add('on');rForm[k]=p2.dataset.v;return;
+  }
+  const s2=e.target.closest('[data-sw2]');
+  if(s2){s2.classList.toggle('on');rForm[s2.dataset.sw2]=s2.classList.contains('on')?1:0;return}
+  const rc=e.target.closest('[data-rc]');
+  if(rc){ruleCat=rc.dataset.rc;renderRules();return}
+  const rd=e.target.closest('[data-rdel]');
+  if(rd){DB.rules=DB.rules.filter(r=>r.id!=rd.dataset.rdel);save();renderRules();renderHomeRule();return}
+  if(e.target.closest('#ruleSave')||e.target.closest('#ruleSave2')){ruleSave();return}
+  const di=e.target.closest('[data-delimg]');
+  if(di){curImgs.splice(+di.dataset.delimg,1);renderLetImgs();return}
+});
+const qgo=document.getElementById('qgo'),qin=document.getElementById('qin');
+function addQuick(){
+  const v=qin.value.trim(); if(!v)return;
+  MEMOS.unshift({t:v,tag:'生活',cls:'life',who:'her',n:'阿柠',time:'刚刚'});
+  qin.value='';
+  document.getElementById('recent').innerHTML=MEMOS.slice(0,3).map(memoCard).join('');
+  document.getElementById('memos').innerHTML=MEMOS.map(memoCard).join('');
+}
+qgo.onclick=addQuick; qin.onkeydown=e=>{if(e.key==='Enter')addQuick()};
+
+/* ---------- 本地持久化 ---------- */
+const KEY='xiaoman_v1',KEY_OLD='xiaoji_v2';
+const DEF={act:{fav:[],played:[]},cycle:[],letters:[],rules:[],photos:[]};
+let DB=(()=>{try{
+  let raw=localStorage.getItem(KEY);
+  if(!raw){const o=localStorage.getItem(KEY_OLD);if(o){raw=o;try{localStorage.setItem(KEY,raw)}catch(e){}}}
+  const r=raw?JSON.parse(raw):null;
+  return Object.assign(JSON.parse(JSON.stringify(DEF)),r||{});
+}catch(e){return JSON.parse(JSON.stringify(DEF))}})();
+let toastEl=null;
+function toast(msg){
+  if(!toastEl){toastEl=document.createElement('div');toastEl.className='toast';document.querySelector('.phone').appendChild(toastEl);}
+  toastEl.textContent=msg;toastEl.classList.add('on');
+  clearTimeout(toastEl._t);toastEl._t=setTimeout(()=>toastEl.classList.remove('on'),2200);
+}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(DB))}catch(e){toast('本地存储已满，试试减少图片数量')}};
+const pad=n=>String(n).padStart(2,'0');
+const D=s=>new Date(s+'T00:00:00');
+const fmt=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const addD=(s,n)=>{const d=D(s);d.setDate(d.getDate()+n);return fmt(d)};
+const diffD=(a,b)=>Math.round((D(b)-D(a))/86400000);
+const today=()=>fmt(new Date());
+const cn=s=>{const d=D(s);return (d.getMonth()+1)+'月'+d.getDate()+'日'};
+
+/* ---------- 互动 ---------- */
+let actCat='全部',curAct=null,af='all',libCat='全部';
+const isFav=t=>DB.act.fav.includes(t), isPlayed=t=>DB.act.played.includes(t);
+function actView(c){return ACT.filter(a=>c==='全部'||a.c===c)}
+function actDraw(){
+  const v=actView(actCat); if(!v.length)return;
+  const un=v.filter(a=>!isPlayed(a.t));
+  const pool=un.length?un:v;
+  let p=pool[Math.floor(Math.random()*pool.length)];
+  if(pool.length>1&&curAct&&p.t===curAct.t)p=pool[(pool.indexOf(p)+1)%pool.length];
+  curAct=p;
+  const box=document.getElementById('actBox');
+  box.classList.remove('flip');void box.offsetWidth;box.classList.add('flip');
+  setTimeout(()=>{
+    document.getElementById('actTxt').textContent=p.t;
+    document.getElementById('actMeta').textContent=p.c+' · '+(isPlayed(p.t)?'已玩过':'还没玩');
+    updActBtn();
+  },200);
+}
+function updActBtn(){
+  if(!curAct)return;
+  const fb=document.getElementById('actFav'),db=document.getElementById('actDone');
+  fb.classList.toggle('on',isFav(curAct.t));fb.textContent=isFav(curAct.t)?'已收藏 ♥':'收藏';
+  db.classList.toggle('on',isPlayed(curAct.t));db.textContent=isPlayed(curAct.t)?'已玩过 ✓':'已玩过';
+}
+function actItem(a){
+  return `<div class="aitem"><span class="tagc">${a.c}</span><div class="t">${a.t}</div>
+    <div class="ops"><div class="iconm${isFav(a.t)?' on':''}" data-fav="${encodeURIComponent(a.t)}">♥</div>
+    <div class="iconm${isPlayed(a.t)?' on':''}" data-play="${encodeURIComponent(a.t)}">✓</div></div></div>`;
+}
+function renderAct(){
+  document.getElementById('actSub').textContent='520 条 · 已玩 '+DB.act.played.length+' · 收藏 '+DB.act.fav.length;
+  const f=DB.act.fav.map(t=>ACT.find(a=>a.t===t)).filter(Boolean);
+  document.getElementById('favCount').textContent=f.length+' 条';
+  document.getElementById('favList').innerHTML=f.length?f.map(actItem).join('')
+    :'<div class="empty">还没有收藏<br>抽到喜欢的点一下「收藏」</div>';
+  const rc=actView(actCat).slice(0,6);
+  document.getElementById('recentCount').textContent=actCat+' · 共 '+actView(actCat).length+' 条';
+  document.getElementById('actRecent').innerHTML=rc.map(actItem).join('');
+}
+function renderLib(){
+  let v=ACT.filter(a=>libCat==='全部'||a.c===libCat);
+  if(af==='fav')v=v.filter(a=>isFav(a.t));
+  if(af==='done')v=v.filter(a=>isPlayed(a.t));
+  if(af==='new')v=v.filter(a=>!isPlayed(a.t));
+  document.getElementById('libSub').textContent=v.length+' 条 · 已玩 '+DB.act.played.length;
+  document.getElementById('libList').innerHTML=v.length?v.slice(0,60).map(actItem).join('')
+    +(v.length>60?'<div class="empty">仅显示前 60 条，用分类缩小范围</div>':'')
+    :'<div class="empty">这里还没有内容</div>';
+}
+function renderActCats(){
+  const cs=['全部',...ACT_GROUPS.map(g=>g.c)];
+  const h=c=>cs.map(x=>`<button class="chip${x===c?' on':''}" data-acat="${x}">${x}</button>`).join('');
+  document.getElementById('actCats').innerHTML=h(actCat);
+  document.getElementById('actCats2').innerHTML=cs.map(x=>`<button class="chip${x===libCat?' on':''}" data-libcat="${x}">${x}</button>`).join('');
+}
+
+/* ---------- 周期 ---------- */
+function cycStats(){
+  const r=DB.cycle.slice().sort((a,b)=>a.start<b.start?-1:1);
+  if(!r.length)return null;
+  const gaps=[];for(let i=1;i<r.length;i++)gaps.push(diffD(r[i-1].start,r[i].start));
+  const avgC=gaps.length?Math.round(gaps.reduce((a,b)=>a+b,0)/gaps.length):28;
+  const lens=r.map(x=>x.end?diffD(x.start,x.end)+1:5);
+  const avgP=Math.max(1,Math.round(lens.reduce((a,b)=>a+b,0)/lens.length));
+  const last=r[r.length-1];
+  const nextStart=addD(last.start,avgC);
+  const ovu=addD(nextStart,-14);
+  return {avgC,avgP,last,nextStart,ovu,n:r.length};
+}
+function phaseOf(d,st){
+  if(!st)return null;
+  let di=diffD(st.last.start,d);
+  if(di<0)return {k:2,n:1,name:'卵泡期',tip:'记录之前'};
+  const curEnd=st.last.end?diffD(st.last.start,st.last.end):st.avgP-1;
+  if(di<=curEnd)return {k:1,n:di+1,name:'经期'};
+  const ovuDay=st.avgC-14;
+  if(Math.abs(di-ovuDay)<=2)return {k:3,n:di+1,name:'排卵期'};
+  if(di<ovuDay-2)return {k:2,n:di+1,name:'卵泡期'};
+  return {k:4,n:di+1,name:'黄体期'};
+}
+const PH={1:['经期','这几天让她多休息，别惹她'],2:['卵泡期','状态回升，适合安排约会'],3:['排卵期','部分人会有轻微腹痛或分泌物变化，属正常现象'],4:['黄体期','可能情绪敏感，多些耐心']};
+function renderPhase(){
+  const el=document.getElementById('phCard'),st=cycStats();
+  if(!st){el.innerHTML='<div class="phcard ph2" style="text-align:center"><div style="font-size:15px;font-weight:700">先记下第一次经期</div><div style="font-size:12px;opacity:.92;margin-top:7px;line-height:19px">记满 2 次以后，就能算出平均周期并预测下次日期</div></div>';return}
+  const ph=phaseOf(today(),st)||{k:2,n:1,name:'卵泡期'};
+  const left=diffD(today(),st.nextStart);
+  el.innerHTML=`<div class="phcard ph${ph.k}">
+    <div style="display:flex;align-items:baseline;gap:8px"><div style="font-size:20px;font-weight:700">${ph.name}</div>
+      <div style="font-size:12px;opacity:.92">周期第 ${ph.n} 天</div></div>
+    <div style="font-size:12px;opacity:.92;margin-top:8px;line-height:19px">${PH[ph.k][1]}<br>
+      平均周期 ${st.avgC} 天 · 经期 ${st.avgP} 天 · 已记录 ${st.n} 次</div>
+    <div style="margin-top:12px;background:rgba(255,255,255,.22);border-radius:12px;padding:9px 11px;font-size:12px">
+      ${left>0?'下次经期预计 '+cn(st.nextStart)+'（还有 '+left+' 天）':left===0?'今天可能是经期开始日':'经期已推迟 '+(-left)+' 天，注意身体'}</div>
+  </div>`;
+}
+function renderCal(){
+  const el=document.getElementById('cal'),st=cycStats();
+  const now=new Date(),y=now.getFullYear(),m=now.getMonth();
+  const start=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate();
+  const pd=[],od=[],nd=[];
+  DB.cycle.forEach(r=>{const e=r.end||addD(r.start,4);for(let d=r.start;d<=e;d=addD(d,1))pd.push(d)});
+  if(st){
+    for(let d=st.nextStart;d<=addD(st.nextStart,st.avgP-1);d=addD(d,1))nd.push(d);
+    for(let i=-2;i<=2;i++)od.push(addD(st.ovu,i));
+  }
+  let h=['日','一','二','三','四','五','六'].map(w=>`<div class="w">${w}</div>`).join('');
+  for(let i=0;i<start;i++)h+='<div></div>';
+  for(let i=1;i<=days;i++){
+    const ds=fmt(new Date(y,m,i));
+    let c=pd.includes(ds)?'p':od.includes(ds)?'o':nd.includes(ds)?'n':'';
+    if(ds===today())c+=' today';
+    h+=`<div class="d ${c}">${i}</div>`;
+  }
+  el.innerHTML=h;
+  document.getElementById('calTitle').textContent=(m+1)+'月';
+  document.getElementById('cycSub').textContent=DB.cycle.length?('已记录 '+DB.cycle.length+' 次 · 平均 '+ (cycStats().avgC) +' 天'):'还没有记录';
+  document.getElementById('cycCount').textContent=DB.cycle.length+' 次';
+}
+function renderPred(){
+  const el=document.getElementById('predCard'),st=cycStats();
+  if(!st){el.innerHTML='<div class="empty">记满 2 次经期后，这里会给出预测</div>';document.getElementById('predTip').textContent='';return}
+  document.getElementById('predTip').textContent='基于 '+st.n+' 次记录';
+  const row=(k,v,c)=>`<div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px">
+    <span style="color:var(--ink-2)">${k}</span><b style="color:${c||'var(--ink)'}">${v}</b></div>`;
+  el.innerHTML=row('平均周期',st.avgC+' 天')+row('平均经期',st.avgP+' 天')
+    +row('下次经期',cn(st.nextStart),'var(--accent)')+row('排卵日',cn(st.ovu),'#7B5F94')
+    +`<div style="padding:9px 0;font-size:12px;color:var(--ink-2);line-height:19px">排卵日前后部分人会有轻微腹痛、分泌物性状改变等表现，属正常生理现象。<br><span style="color:var(--ink-3);font-size:11px">预测基于历史记录推算，周期波动时以实际为准</span></div>`;
+}
+function renderCyc(){
+  renderPhase();renderCal();renderPred();
+  const l=DB.cycle.slice().sort((a,b)=>a.start<b.start?1:-1);
+  const F=['少','中','多'],P=['没有','轻微','明显','很痛'];
+  document.getElementById('cycList').innerHTML=l.length?l.map(r=>
+    `<div class="aitem"><span class="tagc">${cn(r.start)}</span><div class="t">
+      ${r.end?('持续 '+(diffD(r.start,r.end)+1)+' 天'):'进行中'} · 量${F[r.flow||1]} · 痛经${P[r.pain||0]}
+      ${r.sym&&r.sym.length?'<br><span style="color:var(--ink-3);font-size:11px">'+r.sym.join(' · ')+(r.mood?'　情绪 '+r.mood:'')+'</span>':''}
+      ${r.note?'<br><span style="color:var(--ink-2);font-size:12px">'+r.note+'</span>':''}</div>
+      <div class="ops"><div class="iconm" data-cycdel="${r.start}">×</div></div></div>`).join('')
+    :'<div class="empty">还没有记录<br>点右上角「＋ 记一次」开始</div>';
+}
+let cyForm={flow:1,pain:0,mood:'',sym:[]};
+function cycSave(){
+  const s=document.getElementById('cyStart').value;
+  if(!s){toast('请选择开始日期');return}
+  const e=document.getElementById('cyEnd').value;
+  DB.cycle=DB.cycle.filter(r=>r.start!==s);
+  DB.cycle.push({start:s,end:e||'',flow:cyForm.flow,pain:cyForm.pain,mood:cyForm.mood,sym:cyForm.sym.slice(),note:document.getElementById('cyNote').value.trim()});
+  save();renderCyc();renderHomeCyc();
+  document.getElementById('cyStart').value='';document.getElementById('cyEnd').value='';
+  document.getElementById('cyNote').value='';cyForm={flow:1,pain:0,mood:'',sym:[]};
+  document.querySelectorAll('[data-pick] button').forEach(b=>b.classList.remove('on'));
+  go(12);
+}
+function renderHomeCyc(){
+  const el=document.getElementById('homeCyc'); if(!el)return;
+  const st=cycStats(),sb=document.getElementById('homeCycSub');
+  if(!st){el.style.display='none';if(sb)sb.textContent='还没记录';return}
+  el.style.display='flex';el.dataset.go='12';
+  if(sb)sb.textContent=(phaseOf(today(),st)||{name:'—'}).name+' · 平均 '+st.avgC+' 天';
+  const ph=phaseOf(today(),st)||{k:2,n:1,name:'卵泡期'};
+  const left=diffD(today(),st.nextStart);
+  el.innerHTML=`<div style="width:38px;height:38px;border-radius:12px;background:${['#FBD9DC','#DCEAE0','#E9DCF3','#F6E4D0'][ph.k-1]};flex:0 0 38px;display:flex;align-items:center;justify-content:center;font-size:11px;color:${['#B4545F','#4A7A63','#7B5F94','#B98A38'][ph.k-1]};font-weight:600">${ph.name.slice(0,2)}</div>
+    <div style="flex:1"><div style="font-size:13px;font-weight:600">今天 · ${ph.name} 第 ${ph.n} 天</div>
+    <div style="font-size:11px;color:var(--ink-2);margin-top:3px">${left>0?'下次经期还有 '+left+' 天':'今天可能是经期开始'}</div></div>
+    <div style="color:var(--ink-3);font-size:12px">›</div>`;
+}
+
+/* ---------- 情书 ---------- */
+let curLetter=null,curImgs=[];
+function renderLetters(){
+  const q=(document.getElementById('letSearch').value||'').trim();
+  const list=DB.letters.filter(l=>!q||(l.title+l.body).includes(q)).sort((a,b)=>a.date<b.date?1:-1);
+  document.getElementById('letSub').textContent=DB.letters.length+' 封';
+  const ls=document.getElementById('homeLetSub'); if(ls)ls.textContent=DB.letters.length?(DB.letters.length+' 封 · 最近 '+cn(DB.letters[0].date)):'写给对方的话';
+  if(!DB.letters.length){document.getElementById('letList').innerHTML='<div class="empty">还没有情书<br>点右上角写一封</div>';return}
+  if(!list.length){document.getElementById('letList').innerHTML='<div class="empty">没有匹配的内容</div>';return}
+  const g={};list.forEach(l=>{const k=l.date.slice(0,7);(g[k]=g[k]||[]).push(l)});
+  let h='';
+  Object.keys(g).sort().reverse().forEach(k=>{
+    h+=`<div class="monthbar">${k.replace('-','年')}月</div>`;
+    h+=g[k].map(l=>{
+      const th=l.imgs&&l.imgs.length?`<img src="${l.imgs[0]}">`:'✉';
+      return `<div class="lcard" style="margin-bottom:9px" data-open="${l.id}">
+        <div class="thumb">${th}</div>
+        <div class="bd"><h3>${l.title||'无题'}</h3>
+          <div class="pv">${(l.body||'').replace(/</g,'&lt;').slice(0,60)||'（没有正文）'}</div>
+          <div class="mt"><i class="dot ${l.author}"></i>${l.author==='her'?'她':'他'} · ${cn(l.date)}${l.imgs&&l.imgs.length?' · '+l.imgs.length+' 张图':''}</div></div></div>`;
+    }).join('');
+  });
+  document.getElementById('letList').innerHTML=h;
+}
+function openLetter(id){
+  curLetter=DB.letters.find(l=>l.id===id)||null;
+  curImgs=curLetter?(curLetter.imgs||[]).slice():[];
+  document.getElementById('letTitle').value=curLetter?curLetter.title:'';
+  document.getElementById('letBody').value=curLetter?curLetter.body:'';
+  document.getElementById('letMode').textContent=curLetter?'编辑':'写一封';
+  document.getElementById('letDate').textContent=curLetter?cn(curLetter.date):cn(today());
+  const btns=document.querySelectorAll('#letAuthor button');
+  btns.forEach(b=>b.classList.remove('on'));
+  btns[curLetter&&curLetter.author==='him'?1:0].classList.add('on');
+  renderLetImgs();
+  go(15);
+}
+function renderLetImgs(){
+  document.getElementById('letImgs').innerHTML=curImgs.map((s,i)=>
+    `<div style="position:relative"><img class="edimg" src="${s}">
+      <div class="iconm" data-delimg="${i}" style="position:absolute;top:14px;right:8px;background:rgba(255,255,255,.9)">×</div></div>`).join('');
+}
+function saveLetter(){
+  const t=document.getElementById('letTitle').value.trim();
+  const b=document.getElementById('letBody').value;
+  if(!t&&!b&&!curImgs.length){toast('写点什么再保存吧');return}
+  const a=document.querySelector('#letAuthor button.on').textContent==='她'?'her':'him';
+  if(curLetter){curLetter.title=t||'无题';curLetter.body=b;curLetter.author=a;curLetter.imgs=curImgs.slice();}
+  else DB.letters.push({id:Date.now(),title:t||'无题',body:b,author:a,date:today(),imgs:curImgs.slice()});
+  save();renderLetters();curLetter=null;curImgs=[];
+  document.getElementById('letTitle').value='';document.getElementById('letBody').value='';renderLetImgs();
+  go(14);
+}
+function delLetter(){
+  if(curLetter){if(!confirm('删除这封情书？'))return;DB.letters=DB.letters.filter(l=>l.id!==curLetter.id);save();}
+  curLetter=null;curImgs=[];
+  document.getElementById('letTitle').value='';document.getElementById('letBody').value='';renderLetImgs();
+  renderLetters();go(14);
+}
+
+/* ---------- 分寸 ---------- */
+const RCAT={like:'喜欢',hate:'讨厌',never:'不能做',rule:'我们的规矩'};
+const RSEED=[
+ {cat:'like',who:'her',t:'被突然从背后抱住，不需要理由',line:0,agreed:1},
+ {cat:'like',who:'her',t:'睡前聊十分钟今天发生的事',line:0,agreed:1},
+ {cat:'like',who:'him',t:'打完游戏有人坐在旁边陪着',line:0,agreed:1},
+ {cat:'like',who:'him',t:'被当众夸一句，私下的更好',line:0,agreed:1},
+ {cat:'hate',who:'her',t:'被说「你想太多了」',line:0,agreed:1},
+ {cat:'hate',who:'her',t:'正在说话时被手机打断',line:0,agreed:1},
+ {cat:'hate',who:'him',t:'吃饭的时候被催「快点」',line:0,agreed:1},
+ {cat:'hate',who:'him',t:'在外人面前被数落',line:1,agreed:1},
+ {cat:'never',who:'both',t:'吵架时不许说分手，说了就算数',line:1,agreed:1},
+ {cat:'never',who:'both',t:'不许冷战超过一天，睡前必须说话',line:1,agreed:1},
+ {cat:'never',who:'both',t:'不许翻旧账，只说眼前这一件事',line:0,agreed:1},
+ {cat:'never',who:'her',t:'不许未经同意翻看对方手机',line:1,agreed:1},
+ {cat:'rule',who:'both',t:'家务谁做完谁勾掉，不用互相提醒',line:0,agreed:1},
+ {cat:'rule',who:'both',t:'晚归超过十点提前说一声',line:0,agreed:1},
+ {cat:'rule',who:'both',t:'每月留一个只属于我们的晚上',line:0,agreed:1}
+];
+let ruleCat='all',ruleWho='all',rForm={cat:'rule',who:'both',line:0,agreed:1};
+const RW={her:'她',him:'他',both:'共同'};
+function rulesView(){
+  return DB.rules.filter(r=>(ruleCat==='all'||r.cat===ruleCat)&&(ruleWho==='all'||r.who===ruleWho))
+    .sort((a,b)=>(b.line||0)-(a.line||0));
+}
+function renderRuleCats(){
+  const cs=['all','like','hate','never','rule'],nm={all:'全部',like:'喜欢',hate:'讨厌',never:'不能做',rule:'我们的规矩'};
+  document.getElementById('ruleCats').innerHTML=cs.map(c=>{
+    const n=c==='all'?DB.rules.length:DB.rules.filter(r=>r.cat===c).length;
+    return `<button data-rc="${c}" class="${c===ruleCat?'on':''}"><b>${nm[c]}</b><span>${n} 条</span></button>`;
+  }).join('');
+}
+function renderRules(){
+  renderRuleCats();
+  const v=rulesView();
+  document.getElementById('ruleSub').textContent=DB.rules.length+' 条 · 其中底线 '+DB.rules.filter(r=>r.line).length+' 条';
+  document.getElementById('ruleList').innerHTML=v.length?v.map(r=>
+    `<div class="rule ${r.cat}"><div class="t">${r.t}
+      <div style="margin-top:7px;display:flex;gap:6px;flex-wrap:wrap">
+        <span class="tagc">${RCAT[r.cat]}</span><span class="tagc">${RW[r.who]}</span>
+        ${r.line?'<span class="lineline">底线</span>':''}
+        ${r.agreed?'<span class="agreed">已双方确认</span>':''}
+      </div></div>
+      <div class="ops"><div class="iconm" data-rdel="${r.id}">×</div></div></div>`).join('')
+    :'<div class="empty">还没有记录<br>点右上角「＋ 记一条」开始</div>';
+}
+function ruleSave(){
+  const t=document.getElementById('ruleText').value.trim();
+  if(!t){toast('写点什么再保存');return}
+  DB.rules.push({id:Date.now(),cat:rForm.cat,who:rForm.who,t:t,line:rForm.line,agreed:rForm.agreed});
+  save();renderRules();renderHomeRule();resetRuleForm();go(16);
+}
+function resetRuleForm(){
+  rForm={cat:'rule',who:'both',line:0,agreed:1};
+  document.getElementById('ruleText').value='';
+  document.querySelectorAll('[data-pick2] button').forEach(b=>b.classList.remove('on'));
+  const a=document.querySelector('[data-pick2="cat"] [data-v="rule"]');if(a)a.classList.add('on');
+  const b=document.querySelector('[data-pick2="who"] [data-v="both"]');if(b)b.classList.add('on');
+  const l=document.querySelector('[data-sw2="line"]');if(l)l.classList.remove('on');
+  const g=document.querySelector('[data-sw2="agreed"]');if(g)g.classList.add('on');
+}
+function renderHomeRule(){
+  const s=document.getElementById('homeRuleSub'),q=document.getElementById('quarrelRuleSub');
+  const n=DB.rules.length,ln=DB.rules.filter(r=>r.line).length;
+  if(s)s.textContent=n?(n+' 条 · 底线 '+ln+' 条'):'记下彼此的喜欢与禁忌';
+  if(q)q.textContent=n?('已约定 '+n+' 条，吵架前先看看'):'还没有约定，点这里补上';
+}
+
+/* ---------- 相册 ----------
+   照片走 IndexedDB（localStorage 仅 5MB，存不下图），元数据仍在 DB.photos */
+const IDB={
+  db:null,ok:false,
+  open(){return new Promise(res=>{
+    if(!window.indexedDB)return res(false);
+    try{
+      const r=indexedDB.open('xiaoman_photos',1);
+      r.onupgradeneeded=e=>{const d=e.target.result;if(!d.objectStoreNames.contains('p'))d.createObjectStore('p',{keyPath:'id'})};
+      r.onsuccess=e=>{IDB.db=e.target.result;IDB.ok=true;res(true)};
+      r.onerror=()=>res(false);
+    }catch(e){res(false)}
+  })},
+  put(v){return new Promise(res=>{try{const t=IDB.db.transaction('p','readwrite');t.objectStore('p').put(v);t.oncomplete=()=>res(true);t.onerror=()=>res(false)}catch(e){res(false)}})},
+  get(id){return new Promise(res=>{try{const t=IDB.db.transaction('p','readonly');const r=t.objectStore('p').get(id);r.onsuccess=()=>res(r.result||null);r.onerror=()=>res(null)}catch(e){res(null)}})},
+  del(id){return new Promise(res=>{try{const t=IDB.db.transaction('p','readwrite');t.objectStore('p').delete(id);t.oncomplete=()=>res()}catch(e){res()}})}
+};
+let phWho='all',curPhoto=null;
+function shrinkImg(file,w,q){
+  return new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onload=e=>{
+      const im=new Image();
+      im.onload=()=>{
+        const sw=im.width||w,sh=im.height||w;
+        const W=Math.min(w,sw),H=Math.max(1,Math.round(sh*W/sw));
+        const c=document.createElement('canvas');c.width=W;c.height=H;
+        c.getContext('2d').drawImage(im,0,0,W,H);
+        res(c.toDataURL('image/jpeg',q));
+      };
+      im.onerror=rej;im.src=e.target.result;
+    };
+    r.onerror=rej;r.readAsDataURL(file);
+  });
+}
+async function importPhotos(files){
+  const ok=await IDB.open();
+  if(!ok){toast('当前环境不支持本地图片库');return}
+  let n=0;
+  for(const f of files){
+    if(!f.type||f.type.indexOf('image')!==0)continue;
+    try{
+      const d=await shrinkImg(f,800,0.75);
+      const id='p'+Date.now()+'_'+(n)+Math.random().toString(36).slice(2,6);
+      await IDB.put({id:id,data:d});
+      DB.photos.push({id:id,ts:f.lastModified||Date.now(),author:'both',note:''});
+      n++;
+    }catch(e){}
+  }
+  save();renderPhotos();
+}
+function renderPhotos(){
+  const list=DB.photos.filter(p=>phWho==='all'||p.author===phWho).sort((a,b)=>b.ts-a.ts);
+  const hs=document.getElementById('homePhSub');
+  if(hs)hs.textContent=DB.photos.length?(DB.photos.length+' 张照片 · 点开可改归属'):'把本地照片放进来';
+  document.getElementById('phSub').textContent=list.length?('共 '+list.length+' 张 · 点开可改归属与备注'):'还没有照片';
+  const box=document.getElementById('phList');
+  if(!list.length){box.innerHTML='<div class="empty">还没有照片<br>点右上角「＋ 导入」从本地选择</div>';return}
+  const g={};
+  list.forEach(p=>{const d=new Date(p.ts);const k=d.getFullYear()+'年'+(d.getMonth()+1)+'月';(g[k]=g[k]||[]).push(p)});
+  let h='';
+  Object.keys(g).sort().reverse().forEach(k=>{
+    h+='<div class="monthbar">'+k+'</div><div class="pgrid">';
+    h+=g[k].map(p=>{const d=new Date(p.ts);
+      return '<div class="pc" data-openp="'+p.id+'"><img data-pid="'+p.id+'" alt=""><div class="dt">'+(d.getMonth()+1)+'.'+d.getDate()+'</div></div>';
+    }).join('');
+    h+='</div>';
+  });
+  box.innerHTML=h;
+  [...box.querySelectorAll('img[data-pid]')].forEach(async im=>{
+    const r=await IDB.get(im.dataset.pid);
+    if(r)im.src=r.data;
+  });
+}
+function openPhoto(id){
+  const p=DB.photos.find(x=>x.id===id); if(!p)return;
+  curPhoto=p;
+  const lb=document.getElementById('lightbox');
+  IDB.get(id).then(r=>{if(r)lb.querySelector('img').src=r.data});
+  const d=new Date(p.ts);
+  lb.querySelector('.lb-date').textContent=d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';
+  lb.querySelector('.lb-note').value=p.note||'';
+  [...lb.querySelectorAll('.lb-who button')].forEach(b=>b.classList.toggle('on',b.dataset.w===p.author));
+  lb.classList.add('on');
+}
+function closeLb(){document.getElementById('lightbox').classList.remove('on');curPhoto=null;}
+
+/* ---------- 页面切换 ---------- */
+const docHTML=`<div class="doc">
+<h2>「小满」情侣备忘录 · 设计方案</h2>
+<p><b>名字：小满</b>——取自二十四节气，意为「小得盈满，未满方有期待」。记的都不是大事，但一件件攒起来就是圆满；
+同时「未满」留出余地，对应产品里刻意保留的分寸感（不追问、不评判、不把吵架做成记账本）。</p>
+<p>定位：<b>两个人共用的轻量备忘录</b>——不是日记。它记的是「待办、清单、随口一句的约定、临时想法」，
+因此所有设计都围绕<b>三秒内记下一件事</b>展开，而不是写长文。</p>
+
+<h2>信息架构总览</h2>
+<p>六大板块按「使用频次」与「关系性质」分成四组。底部 Tab 只保留最高频的主流程，
+其余收进「我们俩」聚合页并按语义分组——既不让 Tab 超载，也不至于把功能埋进三层菜单。</p>
+<table>
+<tr><th>分组</th><th>板块</th><th>为什么放这里</th></tr>
+<tr><td>主流程（底部 Tab）</td><td>此刻 · 点滴 · 说好的 · 往后</td><td>每天都用，一步可达；「写一条」「一条备忘」是它们的编辑态与详情态，不单独占 Tab</td></tr>
+<tr><td>我们俩</td><td>情侣空间与统计</td><td>两个人的总览页，同时是下面三组的入口</td></tr>
+<tr><td>心意</td><td>互动 · 情书</td><td>主动表达的部分，日常、正向</td></tr>
+<tr><td>相处</td><td>雨过 · 分寸</td><td>处理摩擦的部分：怎么吵、怎么和、什么能做不能做</td></tr>
+<tr><td>照顾她</td><td>周期</td><td>唯一一个<b>非对称</b>功能（他查看她的周期），性质与其余双向功能不同，因此单独成组</td></tr>
+</table>
+<p>顶部原型导航也按同样分组排列，并做了<b>显示顺序与屏幕物理顺序解耦</b>
+（按钮记录目标屏索引），这样调整归类时不用搬动页面结构。</p>
+
+<h2>一、信息架构</h2>
+<table><tr><th>页面</th><th>职责</th><th>关键决策</th></tr>
+<tr><td>速记（首页）</td><td>打开即可记录 + 今日待办</td><td>输入条常驻首页顶部，回车即存，不做「先选分类再写」</td></tr>
+<tr><td>清单</td><td>共享清单协同勾选</td><td>每件标明谁加的，勾掉后保留痕迹而非删除</td></tr>
+<tr><td>全部备忘</td><td>检索与筛选</td><td>标签 + 归属双维度筛选，支持「仅我看」</td></tr>
+<tr><td>新建备忘</td><td>轻量录入</td><td>标签/待办/提醒三个开关，默认「共同」归属</td></tr>
+<tr><td>约定与提醒</td><td>时间维度</td><td>今天 / 明天 / 之后三段式，生日类自动倒计时</td></tr>
+<tr><td>我们</td><td>情侣空间与统计</td><td>统计「共同完成的事」，强化协同感</td></tr>
+</table>
+
+<h2>二、双色身份系统（核心设计点）</h2>
+<p>用两套颜色区分两个人：她的珊瑚红 / 他的雾蓝。同一条备忘、同一项待办，
+通过左侧色条、圆点、卡片底色即可判断是谁记的——<b>不需要读文字就知道归属</b>。
+这是情侣类产品区别于单人备忘录的关键。</p>
+<div class="swatch">
+<div class="sw"><i style="background:#EE7C77"></i>她 #EE7C77</div>
+<div class="sw"><i style="background:#6E93C8"></i>他 #6E93C8</div>
+<div class="sw"><i style="background:#E86A7C"></i>品牌强调 #E86A7C</div>
+<div class="sw"><i style="background:#FBF7F4"></i>背景 #FBF7F4</div>
+<div class="sw"><i style="background:#2C2733"></i>主文字 #2C2733</div>
+<div class="sw"><i style="background:#4FA383"></i>完成态 #4FA383</div>
+</div>
+
+<h2>三、视觉与版式规范</h2>
+<ul>
+<li>底色为暖白 #FBF7F4 而非纯白，降低长列表阅读疲劳；卡片用纯白拉开层次。</li>
+<li>圆角：大卡片 22px，列表卡 18px，胶囊 999px；整体系数统一。</li>
+<li>正文 14px / 行高 20；标题统一 22px（全站唯一）；次要信息 12px，辅助 11px。</li>
+<li>底部为胶囊式 Tab Bar（62px 高，36px 圆角），选中态用实色淡粉底 + 加粗，不用纯色块压视觉。</li>
+<li>编辑态（新建 / 详情）隐藏 Tab Bar，避免误触并让主操作独占底部。</li>
+</ul>
+
+<h2>四、状态与边界</h2>
+<ul>
+<li><b>空状态</b>：清单全勾完显示「已完成」而非清零，保留成就感。</li>
+<li><b>隐私</b>：任何一条都可设「仅自己可见」，且该状态在列表上有明确标识，避免误共享。</li>
+<li><b>冲突</b>：两人同时编辑同一清单项时以后一次为准，不弹冲突框（备忘录级别的内容不值得打断）。</li>
+</ul>
+
+<h2>五、雨过模块（附加功能）</h2>
+<p>入口放在「我们」页，独立雾紫色系 #9B8AA6——<b>刻意与日常的暖粉区隔开</b>，让用户感知「这是一个特殊空间」，
+避免吵架内容与日常备忘混在一起降低产品的日常愉悦感。</p>
+<h2>· 关于「选错误方」的设计处理</h2>
+<p>原始需求是「给吵架归因」。直接做成二选一（我错 / TA 错）有明显风险：多数情侣争执并非单方对错，
+强行归因会让记录变成日后翻旧账的弹药。因此处理为 <b>四选一</b>：</p>
+<ul>
+<li>我的错 / TA 的错 —— 保留明确归因的场景</li>
+<li><b>各退一步</b>（默认项）—— 各退一步，是真实情况下最常见的选项</li>
+<li><b>说不清</b> —— 明确承认「这件事没有对错」，给情绪一个出口</li>
+</ul>
+<p>同时补了一个字段：<b>「下次我们约好」</b>。它把一次吵架沉淀成一条可执行约定
+（例：家务写进共享清单，谁做完谁勾掉），并回流进「我们的约定」。
+这才是这个模块真正的价值——<b>让吵架变成沟通资产，而不是记账本</b>。</p>
+<h2>· 翻篇方式：520 条 · 异地适配 · 火气分级</h2>
+<h3>· 异地适配（重写全部条目）</h3>
+<p>初版条目按同地场景设计，其中包含「做早餐送到床边」「拖地」「洗车」等动作——
+<b>这些在异地恋场景下抽到即废牌</b>，等于给了用户一个无法执行的空头承诺。因此 520 条全部重写为异地可执行，
+并按<b>兑现时机</b>分成两类：</p>
+<ul>
+<li><b>现在就能做（460 条）</b>：点单送到对方城市、寄送实物、线上云陪、消息表达、远程跑腿——立刻可执行。</li>
+<li><b>下次见面（60 条）</b>：按摩、请客、包揽家务、重走约会路线——作为见面时的待兑现清单，条目上恒带「见面时」标记。</li>
+<li>十类目：投喂 70 / 云陪 70 / 表达 70 / 寄送 60 / 见面时 60 / 跑腿 50 / 趣味 40 / 承诺 40 / 作息 30 / 手作 30。</li>
+</ul>
+<h3>· 火气分级（5 级）</h3>
+<p>按这次的情绪分五个档位。关键原则是：<b>分级挂钩的是投入成本（时间、花费、郑重程度），
+而不是「狠度」</b>——越重的选项越郑重、越花心思，但绝不更伤人。翻篇方式变狠只会制造新的矛盾。</p>
+<table>
+<tr><th>火气</th><th>名称</th><th>典型内容</th><th>条数</th></tr>
+<tr><td>1</td><td>小别扭</td><td>发一句软话、发张照片、改个备注</td><td>150</td></tr>
+<tr><td>2</td><td>有点气</td><td>点一杯奶茶、连麦一小时、写段小作文</td><td>148</td></tr>
+<tr><td>3</td><td>真的生气</td><td>寄一份礼物、云陪一下午、一周的承诺</td><td>99</td></tr>
+<tr><td>4</td><td>很受伤</td><td>寄一束花、手写一封长信、郑重的道歉</td><td>63</td></tr>
+<tr><td>5</td><td>很严重</td><td>安排一次见面行程、订民宿、见面时包揽全部</td><td>60</td></tr>
+</table>
+<p>分布刻意做成<b>金字塔</b>而非平均：越严重的情形可选条目越少，
+避免用户在情绪最激烈时抽到过于轻佻、反而显得敷衍的结果。选档后只在对应等级内抽签，
+也可叠加「时机」和「分类」二次筛选。</p>
+<ul>
+<li>全部条目<b>趣味向、无羞辱性</b>，刻意排除任何可能造成二次伤害的内容——翻篇的目的是给台阶下，不是分胜负。</li>
+<li>模块内固定展示一句提示：「抽到什么就做到什么，做完这件事就算翻篇」。</li>
+</ul>
+<h2>· 统计与边界</h2>
+<ul>
+<li>统计「一共记下 / 平均和好用时 / 最常因为」三项，用数据降低情绪化归因。</li>
+<li>记录默认<b>双方可见且不可单方删除</b>，避免一方悄悄抹掉历史。</li>
+<li>「说不清」与「各退一步」的记录不强制抽翻篇方式，尊重没有对错的场景。</li>
+</ul>
+
+<h2>六、互动板块（520 条）</h2>
+<p>与「雨过」的翻篇方式刻意区隔：<b>翻篇方式是吵架后的补偿，互动是日常的情感润滑剂</b>，
+两者内容池完全独立，避免把平时的互动玩成惩罚。</p>
+<table>
+<tr><th>分类</th><th>条数</th><th>定位</th><th>状态</th></tr>
+<tr><td>真心话</td><td>110</td><td>回答私密问题，加深了解</td><td>可收藏 / 标记已玩</td></tr>
+<tr><td>大冒险</td><td>100</td><td>视频或连麦完成的表演</td><td>可收藏 / 标记已玩</td></tr>
+<tr><td>情侣任务</td><td>110</td><td>两人同时做的协同小任务</td><td>可收藏 / 标记已玩</td></tr>
+<tr><td>情话</td><td>109</td><td>抽到就读给对方听</td><td>可收藏 / 标记已玩</td></tr>
+<tr><td>默契问答</td><td>91</td><td>猜对方的答案，检验默契</td><td>可收藏 / 标记已玩</td></tr>
+</table>
+<ul>
+<li>抽卡<b>优先从未玩过的条目中抽取</b>，全部玩过后再循环，避免开局就重复抽到同一条。</li>
+<li>收藏与「已玩过」两个标记相互独立，互动库支持 全部 / 收藏 / 已玩过 / 还没玩 四维筛选 + 分类二次筛选。</li>
+<li>全部条目同样按<b>异地可执行</b>设计（连麦、视频、同步进行），不依赖同地。</li>
+</ul>
+
+<h2>七、周期板块</h2>
+<p>四个阶段：<b>经期 / 卵泡期 / 排卵期 / 黄体期</b>。每条记录含开始日期、结束日期、经量、
+痛经程度、情绪、症状（多选）、备注七个字段。</p>
+<h3>· 预测算法</h3>
+<ul>
+<li><b>平均周期长度</b>：取相邻两次「开始日」间隔的算术平均；仅 1 条记录时回落到默认值 28 天。</li>
+<li><b>平均经期长度</b>：每次「结束日 − 开始日 + 1」的平均；未填结束日时按 5 天估算。</li>
+<li><b>下次经期</b> = 最近一次开始日 + 平均周期；<b>排卵日</b> = 下次经期 − 14 天（用于定位排卵期阶段）。</li>
+<li><b>阶段判定</b>：以最近一次开始日为第 1 天，经期长度内为经期；|当天 − (周期−14)| ≤ 2 为排卵期；
+早于其为卵泡期，晚于其为黄体期。</li>
+</ul>
+<p>已用四组数据验证：规律 28 天、不规律 26/32 天（均值 29）、仅 1 次记录（回落 28）、经期进行中（无结束日）。
+板块定位是<b>了解她的身体状态、照顾她</b>：只呈现四个生理阶段、下次经期与排卵日预测，以及各阶段的身体提示，
+不提供易孕/安全期等备孕避孕视角的内容。</p>
+<h3>· 展示</h3>
+<ul>
+<li>日历用三种视觉标记：经期（实底粉）/ 排卵期（紫）/ 预测经期（虚线框）。</li>
+<li>首页顶部显示当天的阶段与「距下次经期 N 天」，点击进入完整周期页。</li>
+</ul>
+
+<h2>八、情书板块</h2>
+<ul>
+<li>结构：标题 / 日期 / 作者（她·他）/ 正文 / 图片，按月份自动归档，支持关键词搜索（标题 + 正文）。</li>
+<li>图片从本地选择后<b>压缩到宽 760px 的 JPEG</b> 再入库，避免 localStorage 超限。</li>
+<li>作者身份沿用双色系统，卡片上用珊瑚 / 雾蓝圆点区分。</li>
+<li>文案明确「只存在你们两个人的设备里，不会上传」，回应隐私顾虑。</li>
+</ul>
+
+<h2>九、分寸板块</h2>
+<p>把「我知道你不喜欢什么」从脑子里外化成可查阅的清单。四类内容：</p>
+<table>
+<tr><th>类别</th><th>记录什么</th><th>设计要点</th></tr>
+<tr><td>喜欢</td><td>对方喜欢被怎样对待</td><td>正向清单，用于主动制造惊喜</td></tr>
+<tr><td>讨厌</td><td>容易被踩到的雷区</td><td>提醒自己避开，而非要求对方改</td></tr>
+<tr><td>不能做</td><td>明确禁止的行为</td><td>可标记「底线」，底线项自动置顶</td></tr>
+<tr><td>我们的规矩</td><td>双方共同约定的规则</td><td>带「已双方确认」标记</td></tr>
+</table>
+<ul>
+<li><b>每条标归属</b>（她 / 他 / 共同），沿用双色身份系统；归属与类别可叠加筛选。</li>
+<li><b>底线分级</b>：把「不喜欢」和「触犯会很严重」分开——不是所有禁忌同等严重，混在一起会稀释真正重要的那几条。
+底线项在列表中自动排到最前。</li>
+<li><b>最高价值场景是吵架当下</b>：因此在「说开了」页放置「我们的规矩」入口，争执时能立刻翻出当初约好过什么
+（例如「吵架时不许说分手」）。这也是本板块与「雨过」模块的咬合点。</li>
+<li>支持「需要对方确认」开关，把<b>单方期待</b>与<b>双方约定</b>区分开——单方面的要求不该伪装成共同规矩。</li>
+</ul>
+
+<h2>十、数据持久化</h2>
+<p>全部用户数据（互动标记、周期记录、情书及图片）存于浏览器 <b>localStorage</b>，键名 <code>xiaoman_v1</code>（自动迁移旧键 <code>xiaoji_v2</code> 的数据），
+结构为 <code>{act:{fav,played}, cycle:[], letters:[], rules:[]}</code>。原型阶段<b>不做云端同步</b>（数据仅在本机浏览器），
+刷新和关闭页面后数据保留；写入失败时提示「本地存储已满」而非静默丢失。</p>
+
+<h2>十一、数据同步方案（面向 Android 原生版）</h2>
+<p>以下是 Android 原生版本应当采用的同步设计，原型阶段未实现。</p>
+<h3>· 架构：本地优先（Local-first）</h3>
+<p>本地 Room(SQLite) 是<b>唯一真相源</b>，UI 只读本地库，云端仅作同步通道。
+保证断网也能记、打开即秒开、写入不被网络阻塞——备忘录是随手即用的工具，任何 loading 都会打断记录冲动。</p>
+<h3>· 配对机制</h3>
+<ul>
+<li>一方生成 6 位邀请码（或二维码），另一方输入即完成配对，绑定为一个 <code>pair</code>。</li>
+<li><b>不强制注册账号</b>：匿名设备身份 + 配对关系即可，符合情侣产品轻量的定位；可选绑手机号用于换机恢复。</li>
+</ul>
+<h3>· 冲突策略（按类型分级，不搞一刀切）</h3>
+<table>
+<tr><th>数据</th><th>策略</th><th>理由</th></tr>
+<tr><td>备忘条目正文</td><td>LWW：updatedAt 大者胜，同毫秒按 authorId 字典序兜底</td><td>文本覆盖可接受，且必须保证两端收敛</td></tr>
+<tr><td>清单勾选</td><td>LWW，比较 (checked, checkedAt)</td><td>勾选与取消勾选都要能同步回去</td></tr>
+<tr><td>删除</td><td>墓碑软删，永不硬删</td><td>否则删除会被另一端的旧数据复活</td></tr>
+<tr><td>在一起天数、统计</td><td>不同步，本地按起始日计算</td><td>派生数据同步只会制造冲突</td></tr>
+<tr><td>周期记录</td><td>LWW + 端到端加密</td><td>最私密的一类数据</td></tr>
+<tr><td>「仅自己可见」</td><td>不同步</td><td>隐私边界必须是硬的</td></tr>
+</table>
+<h3>· 实时性与离线</h3>
+<ul>
+<li>不追求毫秒级实时：后台轮询（约 30s）+ FCM 静默推送唤醒同步。对方记了一条 → 推送 → 本地拉取 → 首页显示「TA 刚记了一条」。</li>
+<li>离线写入进入待同步队列，联网后批量提交；未同步条目在 UI 上带小圆点标识，状态对用户可见。</li>
+</ul>
+<h3>· 选型</h3>
+<p>Supabase（Postgres + Realtime + Auth）或 Firebase 都可覆盖，免费额度对情侣类小体量产品足够；
+若对周期数据有更高隐私要求，可自建服务并做端到端加密——密钥由配对关系派生，服务端只存密文。</p>
+
+<h2>十二、Android 原生适配要点</h2>
+<p>本 HTML 原型<b>已按 Material 3 完成改造</b>：状态栏 24dp、Navigation Bar 80dp 贴底、系统导航区（手势条）、
+深色模式（顶部右上角可切换）、桌面小部件与 App Shortcuts 均已出图。以下为落地到原生时仍需继续注意的要点：</p>
+<ul>
+<li><b>状态栏</b>：24dp（非 62px），适配挖孔屏，内容区用 WindowInsets 而非写死数值。<i>（原型已改，原生需用 insets）</i></li>
+<li><b>底部导航</b>：悬浮胶囊已改为 Material 3 Navigation Bar（80dp 贴底、带 indicator 指示器）。<i>（原型已改）</i></li>
+<li><b>系统导航区</b>：三键 48dp / 手势 16dp，靠 insets 动态避让，不能写死。<i>（原型按手势 22dp 绘制）</i></li>
+<li><b>返回</b>：系统返回键与边缘返回手势必须能逐层退出；编辑态需拦截并提示「保存还是放弃」。<i>（原型仍用左上角关闭，原生需补）</i></li>
+<li><b>触摸目标</b>：最小 48dp × 48dp，列表项 ≥56dp。<i>（原型部分图标按钮仅 28–34px，原生需放大）</i></li>
+<li><b>字体与圆角</b>：Noto Sans SC / Roboto；圆角遵循 Material 3 shape scale（8/12/16/28dp）。</li>
+<li><b>深色模式</b>：已按 Material 3 dark scheme 生成（主色转浅、容器色转深），Android 用户开启比例高，必须完整适配。</li>
+<li><b>桌面小部件（Widget）</b>：已出 2×1 与 4×2 两版。2×1 用于「TA 今天写了没 + 一键记一条」；4×2 显示待办与周期状态。
+原生需用 Glance（Jetpack）实现，并注意小部件的更新频率限制。</li>
+<li><b>App Shortcuts</b>：已出图，长按图标直达「记一条 / 写情书 / 抽一张」，原生用 ShortcutManager 静态注册。</li>
+<li><b>通知</b>：对方更新、周期、纪念日分 channel，用户可分别关闭。</li>
+</ul>
+
+<h2>十三、相册板块</h2>
+<ul>
+<li><b>读取本地相册</b>：通过系统文件选择器批量导入（<code>accept="image/*"</code> + multiple），
+不依赖任何云端相册权限——照片留在用户自己的设备上。</li>
+<li><b>存储分层</b>：照片压缩到宽 800px / JPEG 0.75 后存 <b>IndexedDB</b>，元数据（日期、作者、备注）存 localStorage。
+原因是 localStorage 只有约 5MB，根本存不下照片；原生端对应 Room + 应用私有目录 + MediaStore 授权。</li>
+<li><b>展示</b>：3 列网格、按月归档、日期角标；点开为大图查看，可改归属（她 / 他 / 共同）与补一句备注。</li>
+<li>作者沿用双色身份系统；照片归属可后补，导入时默认「共同」。</li>
+<li>与情书板块共用同一套图片压缩逻辑，原生端可复用同一条 Pipeline，避免两套图片处理代码。</li>
+</ul>
+</div>`;
+
+const screens=[...document.querySelectorAll('.screen')];
+const pager=document.getElementById('pager');
+const phone=document.querySelector('.phone');
+const note=document.querySelector('.note');
+const pagerBtns=[];
+function go(i){const k=PAGES.findIndex(p=>p.s===i);if(k>=0&&pagerBtns[k])pagerBtns[k].click()}
+let lastG='';
+PAGES.forEach((p,i)=>{
+  if(p.g!==lastG){
+    const lab=document.createElement('span');
+    lab.className='pglabel'; lab.textContent=p.g;
+    pager.appendChild(lab); lastG=p.g;
+  }
+  const b=document.createElement('button');
+  b.textContent=p.n; if(i===0)b.classList.add('on');
+  pagerBtns.push(b);
+  b.onclick=()=>{
+    pager.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    if(p.s<0){
+      phone.style.display='none';
+      if(!document.getElementById('docwrap')){
+        const d=document.createElement('div'); d.id='docwrap'; d.innerHTML=docHTML;
+        d.style.cssText='width:100%;max-width:820px;margin-top:4px';
+        document.querySelector('.viewport').appendChild(d);
+      }
+      document.getElementById('docwrap').style.display='block';
+      note.style.display='none';
+      screens.forEach(s=>s.classList.remove('on'));
+    }else{
+      const w=document.getElementById('docwrap'); if(w)w.style.display='none';
+      phone.style.display='block'; note.style.display='block';
+      screens.forEach((s,j)=>s.classList.toggle('on',j===p.s));
+    }
+  };
+  pager.appendChild(b);
+});
+/* 新板块初始化（须在所有状态变量声明之后执行） */
+renderActCats();renderAct();actDraw();renderLib();renderCyc();renderHomeCyc();renderLetters();
+document.getElementById('letDate').textContent=cn(today());
+document.getElementById('letSearch').addEventListener('input',renderLetters);
+document.getElementById('letFile').addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    const im=new Image();
+    im.onload=()=>{
+      const w=Math.min(760,im.width),h=Math.round(im.height*w/im.width);
+      const c=document.createElement('canvas');c.width=w;c.height=h;
+      c.getContext('2d').drawImage(im,0,0,w,h);
+      curImgs.push(c.toDataURL('image/jpeg',0.78));
+      renderLetImgs();
+    };
+    im.src=ev.target.result;
+  };
+  r.readAsDataURL(f);
+  e.target.value='';
+});
+/* 首次访问时填入分寸示例数据（用户清空后不再回填） */
+/* 深色模式（Material 3 dark scheme），选择写入本地 */
+const themeBtn=document.getElementById('themeBtn');
+function setDark(on){
+  document.body.classList.toggle('dark',on);
+  themeBtn.textContent=on?'浅色模式':'深色模式';
+  try{localStorage.setItem('xiaoman_theme',on?'dark':'light')}catch(e){}
+}
+themeBtn.onclick=()=>setDark(!document.body.classList.contains('dark'));
+try{if(localStorage.getItem('xiaoman_theme')==='dark'){document.body.classList.add('dark');themeBtn.textContent='浅色模式';}}catch(e){}
+renderRules();renderHomeRule();renderPhotos();
+document.getElementById('phFile').addEventListener('change',e=>{
+  if(e.target.files&&e.target.files.length)importPhotos(e.target.files);
+  e.target.value='';
+});
+document.querySelector('#lightbox .lb-note').addEventListener('input',e=>{
+  if(curPhoto){curPhoto.note=e.target.value;save();}
+});
+if(!DB.rules.length&&!localStorage.getItem(KEY)){RSEED.forEach(r=>DB.rules.push(Object.assign({id:Date.now()+Math.random()},r)));save();}
+renderRules();renderHomeRule();
+screens[0].classList.add('on');
+</script>
+</body>
+</html>

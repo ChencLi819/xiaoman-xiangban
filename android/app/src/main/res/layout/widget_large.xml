@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/w_card_bg"
+    android:padding="13dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="要一起做的"
+            android:textColor="@color/w_ink"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/w_progress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="8dp"
+            android:text="2/4"
+            android:textColor="@color/w_ink2"
+            android:textSize="11sp" />
+
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/w_phase"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="周期 · —"
+            android:textColor="@color/w_ink2"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/w_row1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="○ 待办一"
+        android:textColor="@color/w_ink"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/w_row2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:text="○ 待办二"
+        android:textColor="@color/w_ink"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/w_row3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:text="○ 待办三"
+        android:textColor="@color/w_ink"
+        android:textSize="12sp" />
+
+    <Button
+        android:id="@+id/w_action"
+        android:layout_width="match_parent"
+        android:layout_height="32dp"
+        android:layout_marginTop="9dp"
+        android:background="@drawable/w_btn_bg"
+        android:text="打开小满"
+        android:textColor="#FFFFFF"
+        android:textSize="12sp" />
+</LinearLayout>

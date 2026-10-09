@@ -1,0 +1,102 @@
+name: Android CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# 同一分支的新提交取消还在跑的旧任务
+concurrency:
+  group: android-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: 构建与测试（${{ matrix.task }}）
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        # 两个 flavor 都必须通过：业务代码共用，差异只在 BuildConfig.SYNC_ENABLED /
+        # 应用名 / applicationIdSuffix，单侧构建能过不代表另一侧没问题
+        task: [local, sync]
+    env:
+      FLAVOR: ${{ matrix.task }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Gradle Wrapper 缓存
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            android/.gradle
+          key: ${{ runner.os }}-gradle-${{ matrix.task }}-${{ hashFiles('android/**/*.gradle*', 'android/gradle.properties', 'android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-${{ matrix.task }}-
+            ${{ runner.os }}-gradle-
+
+      # runner 镜像自带 Android SDK 并导出 ANDROID_HOME，AGP 会直接读取，
+      # 因此不需要提交 local.properties（该文件按设计不入库）
+      - name: 校验 SDK 环境
+        working-directory: android
+        run: |
+          echo "ANDROID_HOME=${ANDROID_HOME:-<unset>}"
+          if [ -z "${ANDROID_HOME:-}" ]; then
+            echo "runner 未提供 ANDROID_HOME，创建 local.properties 兜底"
+            printf 'sdk.dir=%s\n' "$HOME/Android/Sdk" > local.properties
+          fi
+          chmod +x ./gradlew
+
+      - name: 单元测试
+        working-directory: android
+        run: ./gradlew --no-daemon test${FLAVOR^}DebugUnitTest
+
+      - name: Debug 构建
+        working-directory: android
+        run: ./gradlew --no-daemon assemble${FLAVOR^}Debug
+
+      # release 走 R8 + 资源压缩，混淆/keep 规则的问题只在这条路径上暴露；
+      # release 用 debug 密钥自签（自用分发），所以 CI 里不需要任何签名凭据
+      - name: Release 构建
+        working-directory: android
+        run: ./gradlew --no-daemon assemble${FLAVOR^}Release
+
+      - name: 列出产物
+        id: artifacts
+        working-directory: android
+        run: |
+          find app/build/outputs/apk -name '*.apk' -printf '%p\n' | sort
+
+      - name: 上传 APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: xiaoman-${{ matrix.task }}-debug
+          path: android/app/build/outputs/apk/${{ matrix.task }}/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
+
+  # 文档整理最容易出问题的是内部链接，这里做一次纯文本校验，
+  # 不需要构建产物，秒级完成
+  docs:
+    name: 文档链接检查
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: 检查 markdown 相对链接
+        run: python3 tools/check_docs_links.py

@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- app_name 由 flavor 的 resValue 提供：local=小满，sync=小满·相伴 -->
+</resources>

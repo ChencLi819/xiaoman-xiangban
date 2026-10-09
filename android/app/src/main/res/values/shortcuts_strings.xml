@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sc_memo">记一条</string>
+    <string name="sc_memo_long">记一条备忘</string>
+    <string name="sc_letter">写情书</string>
+    <string name="sc_letter_long">给 TA 写一封情书</string>
+    <string name="sc_draw">抽一张</string>
+    <string name="sc_draw_long">抽一张翻篇方式</string>
+</resources>

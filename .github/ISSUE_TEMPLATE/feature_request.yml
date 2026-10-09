@@ -1,0 +1,90 @@
+name: ✨ 功能建议
+description: 提出新功能或改进现有行为
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        提之前请先看根 [README 的功能一览](https://github.com/ChencLi819/xiaoman-xiangban#功能一览)——这个 App 功能已经偏多，「导航层过载」是评审里点名的已知问题，所以**多数「再加一个入口」的建议更可能通过改造现有页面来实现**。
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 你想解决什么问题
+      description: 描述真实使用中的困境，而不是你想要的功能形态。「两个人用起来别扭」比「加个按钮」有用得多
+      placeholder: |
+        每次想记一条只能在「此刻」输完整句，但当时手上有东西，等我打开 App 已经忘了原话。
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 你设想的方案
+      description: 可以粗糙，实现方式由维护者和贡献者一起定
+    validations:
+      required: true
+
+  - type: dropdown
+    id: board
+    attributes:
+      label: 涉及哪个板块
+      description: 沿用既有命名（此刻 / 说好的 / 点滴 / 往后 / 我们俩 / 雨过 / 说开了 / 抽一张 / 分寸 / 周期 / 互动 / 情书 / 相册 / 周期）
+      options:
+        - 此刻
+        - 说好的
+        - 点滴
+        - 往后
+        - 我们俩
+        - 雨过 / 说开了 / 抽一张
+        - 分寸
+        - 互动 / 互动库
+        - 情书
+        - 相册
+        - 周期
+        - 同步
+        - 桌面小部件 / 提醒 / 快捷方式
+        - 跨板块或新建板块
+        - 构建与工程
+    validations:
+      required: true
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: 需要另一台设备配合吗
+      description: 涉及同步协议的改动需要两端同时升级，成本高很多
+      options:
+        - 不需要，纯单机改动
+        - 需要，但只是展示对端已有的数据
+        - 需要改动同步协议（可能要求双方升级）
+        - 不确定
+    validations:
+      required: true
+
+  - type: textarea
+    id: privacy
+    attributes:
+      label: 隐私影响
+      description: 需要新权限吗？数据会离开设备吗？会引入第三方依赖或服务吗？（本项目无账号、无服务器、无埋点，引入任何一项都需要充分理由）
+      placeholder: 不需要新权限；数据仍只在本地 Room。
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 替代方案
+      description: 如果不做这个功能，两个人现在会怎么绕过去
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 提交前确认
+      options:
+        - label: 已搜索现有 Issue 与 README 功能一览，确认不是重复或已实现
+          required: true
+        - label: 涉及周期板块的建议只做生理学叙述，不含易孕区间 / 安全期 / 备孕 / 避孕等生育视角
+          required: true
+        - label: 愿意按 CONTRIBUTING.md 提 PR（可选）
+          required: false

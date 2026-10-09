@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 设计规范·应用图标：麦穗图形。前景白色麦穗，底为品牌珊瑚 #E86A7C（colors.xml ic_launcher_background）。
+     构造：竖直麦粒做基底，用旋转组 ±38° 交错生成两侧麦粒，底部两片叶。内容收在 66dp 安全区内。 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <group android:translateX="27" android:translateY="27" android:scaleX="2.25" android:scaleY="2.25">
+        <!-- 茎 -->
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M11.3,21.8 L12.7,21.8 L12.7,6.4 L11.3,6.4 Z" />
+        <!-- 顶粒（竖直） -->
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M12,6.6 C10.5,5.2 10.5,3.1 12,1.4 C13.5,3.1 13.5,5.2 12,6.6 Z" />
+        <!-- 右侧麦粒（+38°）×3 -->
+        <group android:translateX="12" android:translateY="10.2" android:rotation="38">
+            <path android:fillColor="#FFFFFFFF"
+                android:pathData="M0,0 C-1.5,-1.4 -1.5,-3.5 0,-5.4 C1.5,-3.5 1.5,-1.4 0,0 Z" />
+        </group>
+        <group android:translateX="12" android:translateY="13.6" android:rotation="38">
+            <path android:fillColor="#FFFFFFFF"
+                android:pathData="M0,0 C-1.5,-1.4 -1.5,-3.5 0,-5.4 C1.5,-3.5 1.5,-1.4 0,0 Z" />
+        </group>
+        <group android:translateX="12" android:translateY="17" android:rotation="38">
+            <path android:fillColor="#FFFFFFFF"
+                android:pathData="M0,0 C-1.5,-1.4 -1.5,-3.5 0,-5.4 C1.5,-3.5 1.5,-1.4 0,0 Z" />
+        </group>
+        <!-- 左侧麦粒（-38°）×3 -->
+        <group android:translateX="12" android:translateY="10.2" android:rotation="-38">
+            <path android:fillColor="#FFFFFFFF"
+                android:pathData="M0,0 C-1.5,-1.4 -1.5,-3.5 0,-5.4 C1.5,-3.5 1.5,-1.4 0,0 Z" />
+        </group>
+        <group android:translateX="12" android:translateY="13.6" android:rotation="-38">
+            <path android:fillColor="#FFFFFFFF"
+                android:pathData="M0,0 C-1.5,-1.4 -1.5,-3.5 0,-5.4 C1.5,-3.5 1.5,-1.4 0,0 Z" />
+        </group>
+        <group android:translateX="12" android:translateY="17" android:rotation="-38">
+            <path android:fillColor="#FFFFFFFF"
+                android:pathData="M0,0 C-1.5,-1.4 -1.5,-3.5 0,-5.4 C1.5,-3.5 1.5,-1.4 0,0 Z" />
+        </group>
+        <!-- 下部两片叶 -->
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M11.6,16.4 C9.2,16 7.4,14.4 6.8,12.2 C9.2,12.6 11,14.2 11.6,16.4 Z" />
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M12.4,16.4 C14.8,16 16.6,14.4 17.2,12.2 C14.8,12.6 13,14.2 12.4,16.4 Z" />
+    </group>
+</vector>

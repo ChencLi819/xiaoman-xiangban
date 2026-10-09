@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/w_card_bg"
+    android:padding="12dp">
+
+    <TextView
+        android:id="@+id/w_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="小满 · 今天"
+        android:textColor="@color/w_ink2"
+        android:textSize="11sp" />
+
+    <TextView
+        android:id="@+id/w_body"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center_vertical"
+        android:text="TA 还没写\n你已经写了 1 条"
+        android:textColor="@color/w_ink"
+        android:textSize="13sp"
+        android:lineSpacingExtra="2dp" />
+
+    <Button
+        android:id="@+id/w_action"
+        android:layout_width="match_parent"
+        android:layout_height="30dp"
+        android:background="@drawable/w_btn_bg"
+        android:text="＋ 记一条"
+        android:textColor="#FFFFFF"
+        android:textSize="12sp" />
+</LinearLayout>

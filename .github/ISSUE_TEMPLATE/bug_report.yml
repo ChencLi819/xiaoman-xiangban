@@ -1,0 +1,112 @@
+name: 🐛 问题反馈
+description: 报告 Bug（崩溃、数据异常、同步问题、界面错乱）
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        先按 [故障排查 · 同步问题先自查](https://github.com/ChencLi819/xiaoman-xiangban/blob/main/docs/troubleshooting.md) 走一遍，很多「同步后数据没了」其实是配置或版本问题。
+
+        ⚠️ **涉及数据丢失的 Bug 请优先填写第 3 项**，并先停止同步、在「我们俩 → 数据导出」保留一份备份，便于定位。
+
+  - type: markdown
+    attributes:
+      value: "## 基础信息"
+
+  - type: dropdown
+    id: flavor
+    attributes:
+      label: 版本
+      description: local = 小满（纯离线单机版）；sync = 小满·相伴（带网盘同步）
+      options: [local（小满）, sync（小满·相伴）, 两个都有]
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: 应用版本
+      description: 取自 APK 文件名里的 v 号（xiaoman-<flavor>-v<version>-<buildType>.apk），或自行对照 CHANGELOG 的最新 tag
+      placeholder: "1.4.8"
+    validations:
+      required: true
+
+  - type: input
+    id: device
+    attributes:
+      label: 设备与系统
+      placeholder: "Pixel 7 / Android 15；或模拟器 AVD 名称"
+    validations:
+      required: true
+
+  - type: textarea
+    id: what
+    attributes:
+      label: 发生了什么
+      description: 具体现象。涉及内容时请打码或用占位符，不要把私密正文贴进 Issue
+      placeholder: |
+        在「雨过」标记翻篇后，另一台设备上的同一条记录仍然显示未翻篇。
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      description: 能稳定复现的步骤最有用；不能稳定复现请说明大概频率和前置状态
+      placeholder: |
+        1. 设备 A 打开 App，进入「雨过」
+        2. 点开任意一条 →「和好了，标记翻篇」
+        3. 等待 15 秒（自动同步防抖）
+        4. 设备 B 打开 App
+        5. 看到：该条仍是未翻篇
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望结果
+    validations:
+      required: true
+
+  - type: dropdown
+    id: dataloss
+    attributes:
+      label: 是否造成数据丢失或错乱
+      description: 记录消失、被覆盖、凭空多出一条、归属/作者错乱、日期错乱都算
+      options: ["是，已经丢了", "是，被覆盖或错乱", "没有，只是显示或操作问题", "不确定"]
+    validations:
+      required: true
+
+  - type: textarea
+    id: synccontext
+    attributes:
+      label: 若是同步问题，请补充
+      description: 不要贴出配对码、网盘账号或应用密码
+      placeholder: |
+        - 网盘：坚果云 / Nextcloud / 群晖 NAS / 自建（请填类型，不要填地址）
+        - 地址协议：HTTPS / HTTP
+        - 两端角色：A=发起方，B=加入方
+        - 两端版本是否一致：是 / 否（分别填版本号）
+        - 「忽略自签名证书」：开 / 关
+        - 是否出现过「同步失败（在「xxx」这一步）」提示：有（请贴提示文字）/ 无
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 日志
+      description: 有 adb 时抓 `adb logcat -d | grep -iE "xiaoman|SQLite|FATAL"`；崩溃请把栈贴全。**请先检查日志里有没有备忘正文、配对码或网盘凭据，有则删掉再贴**
+      render: shell
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 提交前确认
+      options:
+        - label: 已搜索现有 Issue，确认不是重复问题
+          required: true
+        - label: 贴出的日志与截图里没有配对码、网盘凭据或私密正文
+          required: true
+        - label: 涉及周期板块的问题已按生理学描述，未引入生育相关内容
+          required: false

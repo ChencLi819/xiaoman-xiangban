@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 小满同步目标由用户自行填写（坚果云/Nextcloud 为 HTTPS；家用 NAS / 自建
+     WebDAV 常见纯 HTTP 内网地址）。默认策略会拦截明文 HTTP，导致这类
+     服务器在「创建同步目录」一步直接 CLEARTEXT communication not permitted。
+     此处放开明文流量；真正的传输安全由「配对码派生 AES-GCM 加密快照」保证。 -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

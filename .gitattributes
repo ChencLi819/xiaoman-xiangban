@@ -1,0 +1,27 @@
+# 文本统一按 LF 入库，跨平台检出一致
+* text=auto eol=lf
+
+# Gradle 包装脚本必须是 LF，否则 Linux/macOS 上无法执行
+gradlew text eol=lf
+*.sh text eol=lf
+
+# Windows 批处理必须保留 CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# 二进制：禁止换行转换与文本 diff
+*.jar binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.mp4 binary
+*.apk binary
+*.aab binary
+
+# 种子数据由 tools/gen_seed.js 生成，不计入 diff 统计
+android/app/src/main/java/com/xiaoman/memo/data/SeedData.kt linguist-generated=true
+
+# 打包归档时排除仓库治理文件
+.github/ export-ignore

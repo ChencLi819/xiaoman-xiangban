@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🔒 报告安全问题（不要用 Issue）
+    url: https://github.com/ChencLi819/xiaoman-xiangban/security/advisories/new
+    about: 涉及数据丢失、私密内容泄露、同步加密缺陷，请走私密漏洞报告，不要公开提 Issue。
+  - name: 📖 使用与配置说明
+    url: https://github.com/ChencLi819/xiaoman-xiangban#readme
+    about: 功能一览、两个版本的区别、同步怎么配对，先看文档；文档没写清楚本身就是 Bug，可以提 Issue。
+  - name: 🛠 技术说明与同步协议
+    url: https://github.com/ChencLi819/xiaoman-xiangban/blob/main/docs/sync.md
+    about: 排查同步问题前先读这份，多数「数据被覆盖」是配置或版本不一致造成的。
