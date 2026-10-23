@@ -8,6 +8,8 @@
 | [`sync.md`](sync.md) | WebDAV 端到端同步协议：配对、传输、加密、合并规则、触发时机 |
 | [`privacy.md`](privacy.md) | 隐私设计：数据位置、权限、加密边界、备份与已知问题 |
 | [`troubleshooting.md`](troubleshooting.md) | 故障排查：同步自查清单、错误提示对照、数据恢复、构建问题 |
+| [`migration.md`](migration.md) | debug 版 ↔ 正式版的数据保留方案：覆盖安装、降级边界、完整迁移包 |
+| [`signing-keys.md`](signing-keys.md) | 签名密钥清单：两把钥匙的指纹、切换开关、换机时怎么带 |
 | [`../CHANGELOG.md`](../CHANGELOG.md) | 版本变更 |
 | [`../CONTRIBUTING.md`](../CONTRIBUTING.md) | 环境搭建、开发流程、提交与 PR 约定 |
 | [`../SECURITY.md`](../SECURITY.md) | 漏洞上报通道与本项目的安全边界 |

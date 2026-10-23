@@ -13,8 +13,8 @@ android {
         applicationId = "com.xiaoman.memo"
         minSdk = 26
         targetSdk = 35
-        versionCode = 13
-        versionName = "1.4.8"
+        versionCode = 15
+        versionName = "1.5.1"
         vectorDrawables { useSupportLibrary = true }
     }
 
@@ -35,13 +35,44 @@ android {
         }
     }
 
+    signingConfigs {
+        /* 两把钥匙并存，由 android/gradle.properties 的 xiaoman.signing 选择（默认 legacy）：
+           - legacy ：事故前那把旧钥匙（cert 794aca5a…），签过 v1.4.8 / v1.5.0。
+                      两台手机上现存的版本都是它 —— 换机后要「接上」旧版本，必须用它签。
+           - xiaoman：2026-10-23 误以为旧钥匙丢失时新建的钥匙（cert 552b01a2…），
+                      只签过 v1.5.1；仅当手机已经装过 v1.5.1 事故包时才选它。
+           两把都是 androiddebugkey/android，密钥文件随仓库分发，任何机器构建同签名。
+           更多见 docs/signing-keys.md。 */
+        create("legacy") {
+            storeFile = file("xiaoman-signing-legacy.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+        create("xiaoman") {
+            storeFile = file("xiaoman-signing.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+    /* 选择用哪把钥匙签名：legacy / xiaoman */
+    val signingChoice = (findProperty("xiaoman.signing") as String?)?.trim().orEmpty().ifEmpty { "legacy" }
+    require(signingChoice == "legacy" || signingChoice == "xiaoman") {
+        "xiaoman.signing 只能是 legacy 或 xiaoman，当前为「$signingChoice」"
+    }
+
     buildTypes {
+        /* debug 与 release 共用 applicationId 与签名 ——
+           正式版可以直接覆盖安装 debug 版，数据目录不变、Room 走迁移，历史数据原地保留。
+           ⚠️ 不要给 debug 加 applicationIdSuffix：包名一变就是另一个 App，数据目录也跟着变，
+           切换版本会表现为「数据全没了」。换签名的迁移方案见 docs/migration.md。 */
+        debug { signingConfig = signingConfigs.getByName(signingChoice) }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            /* 自用分发：用 debug 密钥签 release 包（可安装、可升级；换正式密钥前 versionCode 不回退即可） */
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName(signingChoice)
         }
     }
     compileOptions {

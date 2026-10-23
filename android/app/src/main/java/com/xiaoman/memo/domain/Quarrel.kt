@@ -70,8 +70,9 @@ object Quarrel {
         return top?.name ?: "其他"
     }
 
-    /* 520 条池：等级 = 分类 base + 固定偏移（与原型一致，可复现） */
-    val LV_BASE = mapOf(
+    /* 原有 520 条的等级：分类 base + 固定偏移（与原型一致，可复现）。
+       v1.5 起每级补到 520 条（见 SeedPoolExtra），所以这里只负责给旧条目定级。 */
+    private val LV_BASE = mapOf(
         "表达" to 1, "作息" to 1, "趣味" to 1,
         "云陪" to 2, "跑腿" to 2, "投喂" to 2,
         "手作" to 3, "承诺" to 3, "寄送" to 4, "见面时" to 5,
@@ -80,13 +81,25 @@ object Quarrel {
 
     data class PoolItem(val c: String, val t: String, val m: Boolean, val lv: Int)
 
-    val POOL: List<PoolItem> = com.xiaoman.memo.data.Seed.POOL_GROUPS.flatMap { g ->
-        g.list.mapIndexed { i, t ->
-            var lv = (LV_BASE[g.c] ?: 2) + LV_OFF[i % 8]
-            if (g.m && lv < 3) lv = 3
-            PoolItem(g.c, t, g.m, lv.coerceIn(1, 5))
+    /* 5 级 × 520 条。旧条目在前（保留原有抽取手感与文本键），扩充条目按等级追加；
+       文案全局唯一（生成时已跨级去重），这里再 distinctBy 兜一层。 */
+    val POOL: List<PoolItem> = buildList {
+        com.xiaoman.memo.data.Seed.POOL_GROUPS.forEach { g ->
+            g.list.forEachIndexed { i, t ->
+                var lv = (LV_BASE[g.c] ?: 2) + LV_OFF[i % 8]
+                if (g.m && lv < 3) lv = 3
+                add(PoolItem(g.c, t, g.m, lv.coerceIn(1, 5)))
+            }
         }
-    }
+        (1..5).forEach { level ->
+            com.xiaoman.memo.data.SeedPoolExtra.of(level).forEach { row ->
+                add(PoolItem(row.c, row.t, row.m, level))
+            }
+        }
+    }.distinctBy { it.t }
+
+    /** 分类列表（界面筛选用）：与种子里的分类保持一致 */
+    val CATS: List<String> = com.xiaoman.memo.data.Seed.POOL_GROUPS.map { it.c }
 
     const val NOTE = "分级是为了匹配这次的情绪，不是比谁更狠。抽到什么就做到什么，做完这件事就算翻篇——记录会留着，情绪可以放下了。"
 }

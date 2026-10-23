@@ -33,7 +33,7 @@ app/src/main/java/com/xiaoman/memo/
 │   ├── components/# 卡片 / chips / 勾选框 / 翻卡动画等通用组件
 │   ├── nav/       # 5 Tab + 全部子路由 + xiaoman:// 深链
 │   └── screens/   # 各功能页
-├── widget/        # 2×1 / 4×2 桌面小部件（RemoteViews）
+├── widget/        # 6 个桌面小部件（2×1 / 2×2 / 4×2，RemoteViews）
 └── remind/        # 通知 channel + 每日提醒 Worker
 ```
 
@@ -48,6 +48,10 @@ Room 是唯一真相源。写入只落本地库，`AppViewModel` 通过 DAO 的 
 ### 跨设备身份用 `uuid`，不用自增主键
 
 自增 id 是每设备本地的，不能作为跨设备合并键。v4 迁移给所有同步表补了 `uuid` 列（逐行 `randomblob` 回填），合并以 `uuid` 对齐同一行。
+
+v6 给 `memos` 加了 `tags`（逗号分隔的多标签），并用旧的 `tag` 回填；`tag` 继续保留为「第一个标签」，
+旧版本 App 与旧同步快照只读 `tag` 也能拿到主标签。标签拆分/规范化集中在 `domain/Tags.kt`，
+写库前统一走 `normalizeTagList`，保证两列始终一致。
 
 ### 合并语义统一走 LWW，不按表特判
 

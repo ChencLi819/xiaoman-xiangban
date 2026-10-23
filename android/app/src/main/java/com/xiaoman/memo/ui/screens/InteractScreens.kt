@@ -48,7 +48,7 @@ import com.xiaoman.memo.ui.nav.R
 import com.xiaoman.memo.ui.theme.T
 import com.xiaoman.memo.ui.theme.Xm
 
-private val ACT_CATS = listOf("真心话", "大冒险", "情侣任务", "情话", "默契问答")
+internal val ACT_CATS = listOf("真心话", "大冒险", "情侣任务", "情话", "默契问答")
 
 @Composable
 private fun ActRow(
@@ -241,16 +241,24 @@ fun InteractScreen(nav: NavHostController, vm: AppViewModel) {
             ActRow(a, marks[a.t]?.fav == true, marks[a.t]?.played == true, { vm.toggleActFav(a.t) }, { vm.toggleActPlayed(a.t) })
         }
 
-        SectionHead("翻翻看", "$cat · 共 ${actPool.count { cat == "全部" || it.c == cat }} 条")
-        actPool.filter { cat == "全部" || it.c == cat }.take(6).forEach { a ->
-            ActRow(a, marks[a.t]?.fav == true, marks[a.t]?.played == true, { vm.toggleActFav(a.t) }, { vm.toggleActPlayed(a.t) })
-        }
+        /* ── 翻翻看：单独入口通道 ──
+           v1.5 起这里不再内嵌任何条目列表（以前会在这里铺 6 条当前分类的内容），
+           只留一个入口卡。具体内容全部收进独立的「翻翻看」页面，避免互动父页面越滚越长。 */
+        FlipEntryCard(
+            total = actPool.size,
+            played = marks.count { it.value.played },
+            fav = marks.count { it.value.fav },
+        ) { nav.navigate(R.FLIP) }
 
-        Text(
-            "想管理内容？去「互动库」新增、修改或删除",
-            fontSize = 12.sp, color = c.accent, textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth().clickable { nav.navigate(R.LIBRARY) }.padding(vertical = 8.dp),
-        )
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(
+                "管理内容 · 互动库",
+                fontSize = 12.sp, color = c.accent, textAlign = TextAlign.Center,
+                modifier = Modifier.weight(1f).clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .clickable { nav.navigate(R.LIBRARY) }.padding(vertical = 11.dp),
+            )
+        }
     }
 }
 
@@ -339,5 +347,35 @@ fun LibraryScreen(nav: NavHostController, vm: AppViewModel) {
             onConfirm = { vm.deletePoolItem("act", a.t) },
             onDismiss = { deleting = null },
         )
+    }
+}
+
+
+/* 翻翻看的入口卡：只做「通道」，不展示具体条目。
+   视觉上比普通列表行更重一点，明确它是进入另一个页面的门，而不是本页的列表。 */
+@Composable
+private fun FlipEntryCard(total: Int, played: Int, fav: Int, onOpen: () -> Unit) {
+    val c = Xm
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .shadow(elevation = 5.dp, shape = RoundedCornerShape(20.dp), ambientColor = Color(0x33C9B8AE), spotColor = Color(0x33C9B8AE))
+            .clip(RoundedCornerShape(20.dp))
+            .background(androidx.compose.ui.graphics.Brush.linearGradient(listOf(c.actGrad[0], c.actGrad[1])))
+            .clickable { onOpen() }
+            .padding(18.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("翻翻看", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = c.actTxt)
+                Text(
+                    "$total 条 · 已玩 $played · 收藏 $fav",
+                    fontSize = 11.sp, color = c.actCap, modifier = Modifier.padding(top = 5.dp),
+                )
+            }
+            Box(
+                Modifier.clip(RoundedCornerShape(14.dp)).background(Color(0x33FFFFFF)).padding(horizontal = 14.dp, vertical = 10.dp),
+            ) { Text("进入 ›", fontSize = 12.sp, color = c.actTxt, fontWeight = FontWeight.SemiBold) }
+        }
     }
 }

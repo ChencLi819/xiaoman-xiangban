@@ -32,6 +32,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.xiaoman.memo.data.AppViewModel
+import com.xiaoman.memo.domain.joinTags
+import com.xiaoman.memo.domain.normalizeTagList
+import com.xiaoman.memo.domain.primaryTag
+import com.xiaoman.memo.domain.tagList
 import com.xiaoman.memo.ui.components.Avatar
 import com.xiaoman.memo.ui.components.Tick
 import com.xiaoman.memo.ui.components.XmChip
@@ -125,7 +129,7 @@ fun DetailScreen(nav: NavHostController, vm: AppViewModel, memoId: Long) {
                     .padding(horizontal = 16.dp),
             ) {
                 // 标签：点击直接弹选择器改（三栏之一；事件也保留可改，便于转回普通备忘后调整）
-                MetaRow("标签", memo.tag) { showTagPicker = true }
+                MetaRow("标签", memo.tagList().joinToString(" · ")) { showTagPicker = true }
                 // 提醒：点击直接开/关（三栏之一）
                 MetaRow("提醒", if (memo.reminder) "已开启" else "未开启") {
                     vm.saveMemo(memo.copy(reminder = !memo.reminder))
@@ -172,22 +176,34 @@ fun DetailScreen(nav: NavHostController, vm: AppViewModel, memoId: Long) {
     }
 
     if (showTagPicker && m != null) {
+        /* v6：多选标签。改动先落在本地，点「保存」才写库，避免每点一下就同步一次 */
+        var picked by remember(m!!.id, m!!.tags) { mutableStateOf(m!!.tagList()) }
         AlertDialog(
             onDismissRequest = { showTagPicker = false },
-            title = { Text("换个标签") },
+            title = { Text("改标签（可多选）") },
             text = {
-                com.xiaoman.memo.ui.components.ChipRow {
-                    tags.forEach { t ->
-                        XmChip(t, on = t == m!!.tag) {
-                            vm.saveMemo(m!!.copy(tag = t))
-                            showTagPicker = false
+                Column {
+                    com.xiaoman.memo.ui.components.ChipRow {
+                        tags.forEach { t ->
+                            XmChip(t, on = picked.contains(t)) {
+                                picked = if (picked.contains(t)) {
+                                    if (picked.size > 1) picked - t else picked
+                                } else {
+                                    (picked + t).take(com.xiaoman.memo.domain.MAX_TAGS)
+                                }
+                            }
                         }
                     }
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showTagPicker = false }) { Text("取消") }
+                TextButton(onClick = {
+                    val list = normalizeTagList(picked)
+                    vm.saveMemo(m!!.copy(tag = primaryTag(list), tags = joinTags(list)))
+                    showTagPicker = false
+                }) { Text("保存", color = MaterialTheme.colorScheme.primary) }
             },
+            dismissButton = { TextButton(onClick = { showTagPicker = false }) { Text("取消") } },
         )
     }
 

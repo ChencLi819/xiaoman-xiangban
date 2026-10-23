@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/w_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/w_card_bg"
+    android:padding="12dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="今日一句"
+        android:textColor="@color/w_ink2"
+        android:textSize="10sp" />
+
+    <TextView
+        android:id="@+id/w_quote"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="3dp"
+        android:text="点一下，抽一句情话"
+        android:textColor="@color/w_ink"
+        android:textSize="12sp"
+        android:maxLines="3"
+        android:ellipsize="end" />
+
+    <TextView
+        android:id="@+id/w_tail"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="小满 · 相伴"
+        android:textColor="@color/w_accent"
+        android:textSize="9sp" />
+</LinearLayout>

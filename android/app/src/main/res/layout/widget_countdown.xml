@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/w_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/w_card_bg"
+    android:padding="14dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="最近的约定"
+        android:textColor="@color/w_ink2"
+        android:textSize="11sp" />
+
+    <TextView
+        android:id="@+id/w_days"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="—"
+        android:textColor="@color/w_accent"
+        android:textSize="30sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/w_title"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="1dp"
+        android:text="还没有约定"
+        android:textColor="@color/w_ink"
+        android:textSize="12sp"
+        android:maxLines="2" />
+
+    <TextView
+        android:id="@+id/w_footer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="打开小满 · 往后"
+        android:textColor="@color/w_ink2"
+        android:textSize="10sp" />
+</LinearLayout>

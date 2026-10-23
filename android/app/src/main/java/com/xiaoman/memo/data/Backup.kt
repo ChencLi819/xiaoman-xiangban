@@ -106,7 +106,7 @@ object Backup {
             memos.forEach { m ->
                 put(
                     JSONObject()
-                        .put("uuid", m.uuid).put("text", m.text).put("tag", m.tag).put("author", m.author)
+                        .put("uuid", m.uuid).put("text", m.text).put("tag", m.tag).put("tags", m.tags).put("author", m.author)
                         .put("isTodo", m.isTodo).put("done", m.done).put("doneAt", m.doneAt)
                         .put("kind", m.kind).put("eventDate", m.eventDate).put("note", m.note)
                         .put("privateOnly", m.privateOnly)
@@ -247,6 +247,8 @@ object Backup {
             val match = if (uuid.isNotBlank()) localMemos.find { it.uuid == uuid } else null
             val base = MemoEntity(
                 text = m.optString("text"), tag = m.optString("tag", "生活"), author = m.optString("author", "her"),
+                /* v2 备份没有 tags 字段：回落到单标签 tag（v1/v2 备份都能正确导入） */
+                tags = m.optString("tags").ifBlank { m.optString("tag", "生活") },
                 isTodo = m.optBoolean("isTodo"), done = m.optBoolean("done"), doneAt = m.optLong("doneAt", 0),
                 kind = m.optString("kind", "memo"), eventDate = m.optString("eventDate"), note = m.optString("note"),
                 privateOnly = m.optBoolean("privateOnly"),

@@ -12,7 +12,7 @@ import androidx.room.RoomDatabase
         CycleEntity::class, LetterEntity::class, PhotoEntity::class, ActMarkEntity::class,
         CustomTagEntity::class, PoolOverrideEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = false,
 )
 abstract class XiaomanDb : RoomDatabase() {
@@ -107,14 +107,40 @@ abstract class XiaomanDb : RoomDatabase() {
             }
         }
 
+        /* v5→v6：备忘支持多标签。新增 tags 列（逗号分隔），并用旧的单标签 tag 回填。
+           纯新增列 + 回填，旧数据语义不变；tag 列继续保留为主标签，旧版本 App 仍能读。 */
+        private val MIGRATION_5_6 = object : androidx.room.migration.Migration(5, 6) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `memos` ADD COLUMN `tags` TEXT NOT NULL DEFAULT ''")
+                db.execSQL("UPDATE `memos` SET `tags` = `tag` WHERE `tags` = '' AND `tag` <> ''")
+            }
+        }
+
         fun get(context: Context): XiaomanDb =
             inst ?: synchronized(this) {
-                inst ?: Room.databaseBuilder(context.applicationContext, XiaomanDb::class.java, "xiaoman.db")
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
-                    // ⚠️ 不加 fallbackToDestructiveMigration*：任何情况下都不允许 Room 清库重建，
-                    // 升降级遇到无法迁移的库宁可崩溃（崩溃日志可查），也不能静默抹掉用户数据
-                    .build()
-                    .also { inst = it }
+                inst ?: try {
+                    Room.databaseBuilder(context.applicationContext, XiaomanDb::class.java, "xiaoman.db")
+                        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+                        // ⚠️ 不加 fallbackToDestructiveMigration*：任何情况下都不允许 Room 清库重建，
+                        // 升降级遇到无法迁移的库宁可崩溃（崩溃日志可查），也不能静默抹掉用户数据
+                        .build()
+                        .also { inst = it }
+                } catch (e: Exception) {
+                    /* 装过更新版本（常见于 debug 包）再覆盖安装旧正式版时，Room 会因数据库版本高于
+                       代码版本而拒绝打开。给一句能照着做的中文提示，别让用户只看到 SQLite 原文。 */
+                    val msg = e.message.orEmpty()
+                    if (msg.contains("downgrade", true) || msg.contains("higher version", true) ||
+                        msg.contains("Migration didn't properly handle", true)
+                    ) {
+                        throw IllegalStateException(
+                            "本机的数据版本比当前 App 新（可能装过更新版本的 debug 包）。\n" +
+                                "请装回同版本或更新版本的正式包，直接覆盖安装即可，数据都在；\n" +
+                                "不要卸载 App——卸载会清掉本机数据（除非你之前导出过迁移包）。",
+                            e,
+                        )
+                    }
+                    throw e
+                }
             }
     }
 }

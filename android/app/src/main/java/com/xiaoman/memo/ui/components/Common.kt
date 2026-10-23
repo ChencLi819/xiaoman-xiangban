@@ -189,8 +189,8 @@ fun WhoDot(author: String) {
 
 /* ── 标签小片 ── */
 @Composable
-fun TagChip(text: String, fg: Color, bg: Color) {
-    Box(Modifier.clip(RoundedCornerShape(8.dp)).background(bg).padding(horizontal = 8.dp, vertical = 3.dp)) {
+fun TagChip(text: String, fg: Color, bg: Color, modifier: Modifier = Modifier) {
+    Box(modifier.clip(RoundedCornerShape(8.dp)).background(bg).padding(horizontal = 8.dp, vertical = 3.dp)) {
         /* maxLines=1 + softWrap=false：横排空间不够时宁可截断，也不要逐字换行把整行撑高 */
         Text(text, fontSize = 11.sp, color = fg, maxLines = 1, softWrap = false)
     }

@@ -14,6 +14,23 @@ node tools/gen_seed.js
 
 `SeedData.kt` 是生成文件，**不要手改**；要改内容请改原型后重新生成。运行结束会打印各分组条数与等级分布，便于核对。
 
+## gen_content.py
+
+按「句式族 + 异地场景词库」扩充内容，生成两个**生成文件**：
+
+- `android/app/src/main/java/com/xiaoman/memo/data/SeedActsExtra.kt`
+  —— 互动四项（真心话 / 大冒险 / 情侣任务 / 默契问答）的扩充条目，与 `SeedData.kt` 合并后各 520 条；
+- `android/app/src/main/java/com/xiaoman/memo/data/SeedPoolExtra.kt`
+  —— 雨过「翻篇方式」按 1..5 级的扩充条目，与原有条目合并后每级 520 条。
+
+```bash
+python tools/gen_content.py
+```
+
+规则：候选句按句式族展开 → 逐条去重（跨分类、跨等级、与原有内容）→ 句式族之间**轮流取样**，
+避免某一族刷屏；同时过滤量词/虚词重复这类模板拼接病句。候选不足会直接报错而不是拿凑数句顶上。
+改内容请改词库或句式族后重新生成，不要手改这两个 Kotlin 文件。
+
 ## sync_snapshot.js
 
 按与 App 内 `SyncCrypto` 完全相同的算法（`SHA-256("xiaoman-sync|" + 配对码)` → AES-256-GCM）解密/加密同步快照文件。

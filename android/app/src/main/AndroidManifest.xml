@@ -63,5 +63,57 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_large_info" />
         </receiver>
+
+        <!-- 桌面小部件 4×2：「说好的」清单进度与未勾项 -->
+        <receiver
+            android:name=".widget.WidgetLists"
+            android:exported="false"
+            android:label="小满 · 说好的">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_lists_info" />
+        </receiver>
+
+        <!-- 桌面小部件 2×2：最近的约定倒计时 -->
+        <receiver
+            android:name=".widget.WidgetCountdown"
+            android:exported="false"
+            android:label="小满 · 还有几天">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_countdown_info" />
+        </receiver>
+
+        <!-- 桌面小部件 4×2：最近三条点滴 -->
+        <receiver
+            android:name=".widget.WidgetMemos"
+            android:exported="false"
+            android:label="小满 · 点滴">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_memos_info" />
+        </receiver>
+
+        <!-- 桌面小部件 2×1：今日一句（每天换一句情话） -->
+        <receiver
+            android:name=".widget.WidgetQuote"
+            android:exported="false"
+            android:label="小满 · 今日一句">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_quote_info" />
+        </receiver>
     </application>
 </manifest>

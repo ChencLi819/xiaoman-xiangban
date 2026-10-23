@@ -165,6 +165,7 @@ object SyncEngine {
                 remote = peerMemos.map { m ->
                     MemoEntity(
                         uuid = m.optString("uuid"), text = m.optString("text"), tag = m.optString("tag", "生活"),
+                        tags = m.optString("tags").ifBlank { m.optString("tag", "生活") },
                         author = m.optString("author", "her"), isTodo = m.optBoolean("isTodo"),
                         done = m.optBoolean("done"), doneAt = m.optLong("doneAt", 0),
                         kind = m.optString("kind", "memo"), eventDate = m.optString("eventDate"), note = m.optString("note"),

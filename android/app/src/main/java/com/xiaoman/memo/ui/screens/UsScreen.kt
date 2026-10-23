@@ -55,6 +55,7 @@ fun UsScreen(nav: NavHostController, vm: AppViewModel) {
     var syncing by remember { mutableStateOf(false) }
     var syncStep by remember { mutableStateOf("") }
     var confirmClear by remember { mutableStateOf(false) }
+    var showMigration by remember { mutableStateOf(false) }
     var toast by remember { mutableStateOf("") }
     val sync by vm.syncConfig.collectAsState()
 
@@ -71,6 +72,27 @@ fun UsScreen(nav: NavHostController, vm: AppViewModel) {
                     vm.importJson(text)
                 }.onSuccess { r -> toast = "已导入 ${r.total} 条（备忘${r.memos} 清单${r.checklists} 约定${r.plans} 雨过${r.quarrels} 分寸${r.rules} 周期${r.cycles} 情书${r.letters}）" }
                     .onFailure { toast = "导入失败：${it.message}" }
+            }
+        }
+    }
+
+    /* 完整迁移包（zip）选择：先落到缓存文件再解包，避免 SAF 流不能随机读取 */
+    val bundlePicker = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri != null) {
+            scope.launch {
+                runCatching {
+                    val tmp = File(ctx.cacheDir, "import_bundle.zip")
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        ctx.contentResolver.openInputStream(uri)?.use { input ->
+                            tmp.outputStream().use { out -> input.copyTo(out) }
+                        } ?: error("无法读取文件")
+                    }
+                    vm.importBundle(tmp)
+                }.onSuccess { r ->
+                    toast = "已从迁移包恢复：${r.backup.total} 条记录 · ${r.photos} 张照片"
+                }.onFailure { toast = "恢复失败：${it.message}" }
             }
         }
     }
@@ -188,6 +210,19 @@ fun UsScreen(nav: NavHostController, vm: AppViewModel) {
                 }
             }
             SetRow("数据导入（选择备份 JSON）") { importPicker.launch(arrayOf("application/json", "text/plain", "*/*")) }
+            SetRow("完整迁移包导出（含情书/相册图片）") {
+                scope.launch {
+                    runCatching {
+                        val dir = ctx.getExternalFilesDir(android.os.Environment.DIRECTORY_DOCUMENTS) ?: ctx.filesDir
+                        if (!dir.exists()) dir.mkdirs()
+                        val f = File(dir, "xiaoman_bundle_${System.currentTimeMillis()}.zip")
+                        val images = vm.exportBundle(f)
+                        toast = "已导出迁移包（含 $images 张图片）：${f.absolutePath}"
+                    }.onFailure { toast = "导出失败：${it.message}" }
+                }
+            }
+            SetRow("从迁移包恢复（zip）") { bundlePicker.launch(arrayOf("application/zip", "application/octet-stream", "*/*")) }
+            SetRow("debug 版 ↔ 正式版：数据怎么保留") { showMigration = true }
             SetRow("清空全部数据") { confirmClear = true }
         }
 
@@ -269,6 +304,25 @@ fun UsScreen(nav: NavHostController, vm: AppViewModel) {
                 }) { Text("保存", color = c.accentDeep) }
             },
             dismissButton = { TextButton(onClick = { showProfile = false }) { Text("取消") } },
+        )
+    }
+
+    if (showMigration) {
+        AlertDialog(
+            onDismissRequest = { showMigration = false },
+            title = { Text("debug 版 ↔ 正式版") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("覆盖安装即可保留数据", fontSize = 13.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                    Text("正式版可直接覆盖 debug 版，数据库自动升级。", fontSize = 12.sp, lineHeight = 19.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("不要降级", fontSize = 13.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                    Text("装过更高版本后再装旧版本会打不开，App 会提示，不会清库。", fontSize = 12.sp, lineHeight = 19.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("换签名 / 换机", fontSize = 13.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                    Text("先导出「完整迁移包」，装好后在这里恢复。", fontSize = 12.sp, lineHeight = 19.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("不要先卸载再装。", fontSize = 12.sp, color = MaterialTheme.colorScheme.error)
+                }
+            },
+            confirmButton = { TextButton(onClick = { showMigration = false }) { Text("知道了", color = c.accentDeep) } },
         )
     }
 

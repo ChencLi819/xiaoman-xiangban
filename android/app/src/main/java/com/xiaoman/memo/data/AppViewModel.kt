@@ -92,7 +92,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun addQuickMemo(text: String, onDone: () -> Unit = {}) = viewModelScope.launch {
         val id = settings.profileOnce().identity
         if (text.isBlank()) return@launch
-        dao.insertMemo(MemoEntity(text = text.trim(), tag = "生活", author = id, createdAt = now(), updatedAt = now()))
+        dao.insertMemo(MemoEntity(text = text.trim(), tag = "生活", tags = "生活", author = id, createdAt = now(), updatedAt = now()))
         refreshWidgets(); onDone()
     }
 
@@ -100,7 +100,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun addTodoMemo(text: String) = viewModelScope.launch {
         if (text.isBlank()) return@launch
         val id = settings.profileOnce().identity
-        dao.insertMemo(MemoEntity(text = text.trim(), tag = "待办", author = id, isTodo = true, createdAt = now(), updatedAt = now()))
+        dao.insertMemo(MemoEntity(text = text.trim(), tag = "待办", tags = "待办", author = id, isTodo = true, createdAt = now(), updatedAt = now()))
         refreshWidgets()
     }
 
@@ -111,7 +111,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val id = settings.profileOnce().identity
         dao.insertMemo(
             MemoEntity(
-                text = title.trim(), tag = "生活", author = id, kind = "event",
+                text = title.trim(), tag = "生活", tags = "生活", author = id, kind = "event",
                 eventDate = date, note = note.trim(), privateOnly = privateOnly,
                 owner = if (privateOnly) "mine" else "shared",
                 createdAt = now(), updatedAt = now(),
@@ -120,14 +120,19 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         refreshWidgets(); onDone()
     }
 
-    /* 泛化新建：任意标签的备忘都支持 名称(text) + 详细内容(note) 分层存储 */
-    fun addTaggedMemo(text: String, tag: String, note: String, privateOnly: Boolean = false, onDone: () -> Unit = {}) = viewModelScope.launch {
+    /* 泛化新建：任意标签（单标签版，保留给旧调用点） */
+    fun addTaggedMemo(text: String, tag: String, note: String, privateOnly: Boolean = false, onDone: () -> Unit = {}) =
+        addMemoWithTags(text, listOf(tag), note, privateOnly, onDone)
+
+    /* 泛化新建：多标签（v6）。tag 列写主标签，tags 列写全部，旧版本仍能读出主标签。 */
+    fun addMemoWithTags(text: String, tags: List<String>, note: String, privateOnly: Boolean = false, onDone: () -> Unit = {}) = viewModelScope.launch {
         if (text.isBlank()) return@launch
         val id = settings.profileOnce().identity
+        val list = com.xiaoman.memo.domain.normalizeTagList(tags)
         dao.insertMemo(
             MemoEntity(
-                text = text.trim(), tag = tag, author = id, kind = "memo",
-                note = note.trim(), privateOnly = privateOnly,
+                text = text.trim(), tag = com.xiaoman.memo.domain.primaryTag(list), tags = com.xiaoman.memo.domain.joinTags(list),
+                author = id, kind = "memo", note = note.trim(), privateOnly = privateOnly,
                 owner = if (privateOnly) "mine" else "shared",
                 createdAt = now(), updatedAt = now(),
             ),
@@ -136,8 +141,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun saveMemo(m: MemoEntity) = viewModelScope.launch {
-        if (m.id == 0L) dao.insertMemo(m.copy(createdAt = now(), updatedAt = now()))
-        else dao.updateMemo(m.copy(updatedAt = now()))
+        /* 写库前统一规范化多标签：tags 与 tag 必须一致，避免历史调用点只改了一个 */
+        val list = com.xiaoman.memo.domain.normalizeTagList(com.xiaoman.memo.domain.splitTags(m.tags).ifEmpty { listOf(m.tag) })
+        val fixed = m.copy(tag = com.xiaoman.memo.domain.primaryTag(list), tags = com.xiaoman.memo.domain.joinTags(list))
+        if (fixed.id == 0L) dao.insertMemo(fixed.copy(createdAt = now(), updatedAt = now()))
+        else dao.updateMemo(fixed.copy(updatedAt = now()))
         refreshWidgets()
     }
 
@@ -248,7 +256,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     /* ── 自定义标签 ── */
     fun addCustomTag(name: String, onDone: (Boolean) -> Unit = {}) = viewModelScope.launch {
         val n = name.trim()
-        if (n.isEmpty() || n.length > 8) { onDone(false); return@launch }
+        // 标签名不允许带逗号：tags 列用逗号分隔，带了会把一个标签拆成两个
+        if (!com.xiaoman.memo.domain.isValidTagName(n)) { onDone(false); return@launch }
         if (dao.tagByName(n) != null) { onDone(true); return@launch } // 已存在视为成功（幂等）
         val r = dao.insertCustomTag(CustomTagEntity(name = n, createdAt = now(), updatedAt = now()))
         onDone(r != -1L)
@@ -312,6 +321,19 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     /** 追加式导入，返回导入条目数；抛异常由 UI 捕获提示 */
     suspend fun importJson(json: String): Backup.ImportResult {
         val r = Backup.import(db, json, settings)
+        refreshWidgets()
+        return r
+    }
+
+    /** 完整迁移包（含图片）：换签名 / 换机器时用，导出返回图片张数 */
+    suspend fun exportBundle(out: java.io.File): Int {
+        val n = DataBundle.export(getApplication(), db, settings, out)
+        return n
+    }
+
+    /** 从完整迁移包恢复（追加式，不清空本机数据） */
+    suspend fun importBundle(file: java.io.File): DataBundle.Result {
+        val r = DataBundle.import(getApplication(), db, settings, file)
         refreshWidgets()
         return r
     }

@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.xiaoman.memo.data.AppViewModel
+import com.xiaoman.memo.domain.tagList
 import com.xiaoman.memo.ui.components.EmptyView
 import com.xiaoman.memo.ui.components.MemoCard
 import com.xiaoman.memo.ui.components.NoteToggleField
@@ -58,7 +59,11 @@ fun MemosScreen(nav: NavHostController, vm: AppViewModel) {
     var showNew by remember { mutableStateOf(false) }
     var newKind by remember { mutableStateOf("memo") }   // memo | event
     var nTitle by remember { mutableStateOf("") }
-    var nTag by remember { mutableStateOf("生活") }
+    /* v6：一条备忘可以挂多个标签；第一个是主标签（写进 tag 列，旧版本也能读） */
+    var nTags by remember { mutableStateOf(listOf("生活")) }
+    var showNewTag by remember { mutableStateOf(false) }
+    var newTagName by remember { mutableStateOf("") }
+    var newTagHint by remember { mutableStateOf("") }
     var nDate by remember { mutableStateOf("") }
     var nNoteOpen by remember { mutableStateOf(false) }
     var nNote by remember { mutableStateOf("") }
@@ -80,8 +85,8 @@ fun MemosScreen(nav: NavHostController, vm: AppViewModel) {
 
     fun closeNew() {
         showNew = false
-        nTitle = ""; nTag = "生活"; nDate = ""; nNote = ""; nNoteOpen = false
-        nPrivate = false; nHint = ""
+        nTitle = ""; nTags = listOf("生活"); nDate = ""; nNote = ""; nNoteOpen = false
+        nPrivate = false; nHint = ""; showNewTag = false; newTagName = ""; newTagHint = ""
     }
 
     /** 保存成功后统一收尾：清掉搜索与筛选（否则新条目可能被当前筛选/搜索挡在列表外，
@@ -98,13 +103,15 @@ fun MemosScreen(nav: NavHostController, vm: AppViewModel) {
     val me = ui.profile.identity
     /* 别人的「仅我看」条目即使因为历史原因（旧版本同步）残留在本机，也不在这里展示 */
     val list = ui.memos.filter { m ->
+        val tags = m.tagList()
         (m.author == me || !m.privateOnly) &&
-            (q.isBlank() || m.text.contains(q, true) || m.tag.contains(q, true) || vm.nameOf(m.author).contains(q, true))
+            (q.isBlank() || m.text.contains(q, true) || tags.any { it.contains(q, true) } || vm.nameOf(m.author).contains(q, true))
             && when {
                 filter == "全部" -> true
                 filter == "事件" -> m.kind == "event"
                 filter == "仅我看" -> m.privateOnly && m.author == me
-                else -> m.kind == "memo" && m.tag == filter
+                /* 多标签：命中任意一个标签就算（一条备注可以同时出现在「生活」和「想买」下） */
+                else -> m.kind == "memo" && tags.contains(filter)
             }
     }
 
@@ -212,9 +219,20 @@ fun MemosScreen(nav: NavHostController, vm: AppViewModel) {
                             }
                         }
                     } else {
-                        com.xiaoman.memo.ui.components.ChipRow {
-                            com.xiaoman.memo.domain.allTags(ui.customTags.map { it.name }).forEach { t ->
-                                XmChip(t, on = nTag == t) { nTag = t }
+                        Column {
+                            Text("标签（可多选）", fontSize = 11.sp, color = MaterialTheme.colorScheme.outline)
+                            com.xiaoman.memo.ui.components.ChipRow {
+                                com.xiaoman.memo.domain.allTags(ui.customTags.map { it.name }).forEach { t ->
+                                    XmChip(t, on = nTags.contains(t)) {
+                                        nTags = if (nTags.contains(t)) {
+                                            // 至少留一个标签，取消最后一个时不生效
+                                            if (nTags.size > 1) nTags - t else nTags
+                                        } else {
+                                            (nTags + t).take(com.xiaoman.memo.domain.MAX_TAGS)
+                                        }
+                                    }
+                                }
+                                com.xiaoman.memo.ui.components.XmActionChip("＋ 自定义") { showNewTag = true }
                             }
                         }
                     }
@@ -240,7 +258,7 @@ fun MemosScreen(nav: NavHostController, vm: AppViewModel) {
                         return@TextButton
                     }
                     if (newKind == "event") vm.addEventMemo(title, nDate, nNote, nPrivate)
-                    else vm.addTaggedMemo(title, nTag, nNote, nPrivate)
+                    else vm.addMemoWithTags(title, nTags, nNote, nPrivate)
                     closeNew()
                     afterSaved()
                 }) { Text("保存", color = MaterialTheme.colorScheme.primary) }
@@ -264,6 +282,49 @@ fun MemosScreen(nav: NavHostController, vm: AppViewModel) {
             },
             dismissButton = { TextButton(onClick = { showEvDate = false }) { Text("取消") } },
         ) { androidx.compose.material3.DatePicker(state = state) }
+    }
+
+    /* ── 新建时随手加一个自定义标签 ── */
+    if (showNewTag) {
+        AlertDialog(
+            onDismissRequest = { showNewTag = false; newTagName = ""; newTagHint = "" },
+            title = { Text("新建标签") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = newTagName,
+                        onValueChange = { newTagName = it; newTagHint = "" },
+                        label = { Text("标签名") },
+                        singleLine = true,
+                        isError = newTagHint.isNotBlank(),
+                        supportingText = if (newTagHint.isNotBlank()) {
+                            { Text(newTagHint, fontSize = 11.sp) }
+                        } else null,
+                    )
+                    Text("8 字以内，不能含逗号", fontSize = 10.sp, color = MaterialTheme.colorScheme.outline)
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val n = newTagName.trim()
+                    if (!com.xiaoman.memo.domain.isValidTagName(n)) {
+                        newTagHint = "1–8 个字，不能含逗号"
+                        return@TextButton
+                    }
+                    scope.launch {
+                        vm.addCustomTag(n) { ok ->
+                            if (ok) {
+                                nTags = (nTags + n).distinct().take(com.xiaoman.memo.domain.MAX_TAGS)
+                                showNewTag = false; newTagName = ""; newTagHint = ""
+                            } else {
+                                newTagHint = "这个名字已经有了，或格式不对"
+                            }
+                        }
+                    }
+                }) { Text("创建", color = MaterialTheme.colorScheme.primary) }
+            },
+            dismissButton = { TextButton(onClick = { showNewTag = false; newTagName = ""; newTagHint = "" }) { Text("取消") } },
+        )
     }
 
     /* ── 详情查看层：点击任意条目弹出；名称可改、详细内容可自由开关编辑 ── */
@@ -292,7 +353,7 @@ fun MemosScreen(nav: NavHostController, vm: AppViewModel) {
                     if (m.kind == "event" && m.eventDate.isNotBlank()) {
                         Text("📅 " + com.xiaoman.memo.util.Dates.cn(m.eventDate), fontSize = 12.sp, color = c.goldInk)
                     } else if (m.kind != "event") {
-                        Text("标签：${m.tag}", fontSize = 11.sp, color = MaterialTheme.colorScheme.outline)
+                        Text("标签：" + m.tagList().joinToString(" · "), fontSize = 11.sp, color = MaterialTheme.colorScheme.outline)
                     }
                     NoteToggleField(open = viewNoteOpen, value = viewNote, onOpen = { viewNoteOpen = true }, onClose = { viewNoteOpen = false }, onChange = { viewNote = it })
                     com.xiaoman.memo.ui.components.SwitchRow(

@@ -11,7 +11,15 @@ data class ActItem(val c: String, val t: String, val custom: Boolean = false)
    op=add  → 追加用户自定义条目。
    对「自定义新增」条目的改/删直接作用于该 add 行本身。 */
 object Pools {
-    val ACT_BASE: List<ActItem> = com.xiaoman.memo.data.Seed.ACT_GROUPS.flatMap { g -> g.list.map { ActItem(g.c, it) } }
+    /* 互动条目目标条数：v1.5 起四项（真心话 / 大冒险 / 情侣任务 / 默契问答）各 520，
+       「情话」按要求保持原样、不扩充。原文在前、扩充在后，原有条目顺序不变
+       （pool_overrides 与 act_marks 都以文本为键，顺序变化不影响它们）。 */
+    const val ACT_TARGET = 520
+
+    val ACT_BASE: List<ActItem> = com.xiaoman.memo.data.Seed.ACT_GROUPS.flatMap { g ->
+        val extra = com.xiaoman.memo.data.SeedActsExtra.BY_CAT[g.c].orEmpty()
+        (g.list + extra).distinct().take(ACT_TARGET).map { ActItem(g.c, it) }
+    }
 
     fun effectiveAct(ov: List<PoolOverrideEntity>): List<ActItem> {
         val edits = ov.filter { it.kind == "act" && it.op == "edit" }.associateBy { it.origin }

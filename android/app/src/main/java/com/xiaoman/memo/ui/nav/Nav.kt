@@ -43,6 +43,7 @@ import com.xiaoman.memo.ui.screens.CycleScreen
 import com.xiaoman.memo.ui.screens.DetailScreen
 import com.xiaoman.memo.ui.screens.DrawScreen
 import com.xiaoman.memo.ui.screens.EditorScreen
+import com.xiaoman.memo.ui.screens.FlipBrowseScreen
 import com.xiaoman.memo.ui.screens.HomeScreen
 import com.xiaoman.memo.ui.screens.InteractScreen
 import com.xiaoman.memo.ui.screens.LettersScreen
@@ -52,6 +53,7 @@ import com.xiaoman.memo.ui.screens.ListsScreen
 import com.xiaoman.memo.ui.screens.MemosScreen
 import com.xiaoman.memo.ui.screens.PhotosScreen
 import com.xiaoman.memo.ui.screens.PlansScreen
+import com.xiaoman.memo.ui.screens.PoolBrowseScreen
 import com.xiaoman.memo.ui.screens.QuarrelEditScreen
 import com.xiaoman.memo.ui.screens.QuarrelsScreen
 import com.xiaoman.memo.ui.screens.RuleEditScreen
@@ -68,7 +70,9 @@ object R {
     const val QUARRELS = "quarrels"
     const val QUARREL_EDIT = "quarrelEdit?quarrelId={quarrelId}&heat={heat}"
     const val DRAW = "draw?quarrelId={quarrelId}&heat={heat}"
+    const val POOL_LIB = "poolLib"
     const val INTERACT = "interact"
+    const val FLIP = "flip"
     const val LIBRARY = "library"
     const val CYCLE = "cycle"
     const val CYCLE_EDIT = "cycleEdit?cycleId={cycleId}&daily={daily}"
@@ -176,6 +180,8 @@ fun XiaomanNavHost(nav: NavHostController, vm: com.xiaoman.memo.data.AppViewMode
                 DrawScreen(nav, vm, e.arguments?.getString("quarrelId")?.toLongOrNull(), e.arguments?.getString("heat")?.toIntOrNull() ?: 2)
             }
             composable(R.INTERACT) { InteractScreen(nav, vm) }
+            composable(R.FLIP) { FlipBrowseScreen(nav, vm) }
+            composable(R.POOL_LIB) { PoolBrowseScreen(nav, vm) }
             composable(R.LIBRARY) { LibraryScreen(nav, vm) }
             composable(R.CYCLE) { CycleScreen(nav, vm) }
             composable(R.CYCLE_EDIT) { e ->

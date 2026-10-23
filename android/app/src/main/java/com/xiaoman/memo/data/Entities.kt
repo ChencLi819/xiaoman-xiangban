@@ -17,7 +17,10 @@ import androidx.room.PrimaryKey
 data class MemoEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val text: String,
-    val tag: String,                       // 生活 想法 约定 待办 想买
+    val tag: String,                       // 生活 想法 约定 待办 想买；= 多标签里的第一个
+    /* v6：多标签。逗号分隔的标签名；tag 始终保留第一个标签，
+       方便旧版本 App / 旧同步协议只认单标签时仍能正确读出主标签。 */
+    @ColumnInfo(defaultValue = "") val tags: String = "",
     val author: String,                    // her | him
     val isTodo: Boolean = false,
     val done: Boolean = false,

@@ -19,6 +19,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.xiaoman.memo.data.MemoEntity
+import com.xiaoman.memo.domain.tagList
 import com.xiaoman.memo.ui.theme.Xm
 import com.xiaoman.memo.util.Dates
 
@@ -48,7 +49,8 @@ fun tagColors(name: String): Pair<androidx.compose.ui.graphics.Color, androidx.c
 @Composable
 fun MemoCard(m: MemoEntity, onClick: () -> Unit) {
     val c = Xm
-    val (tagFg, tagBg) = tagColors(m.tag)
+    /* v6：多标签。列表里最多显示 3 个，超出用 +N 收口，避免卡片被标签撑爆 */
+    val tags = m.tagList()
     val isEvent = m.kind == "event"
     Row(
         Modifier
@@ -92,10 +94,15 @@ fun MemoCard(m: MemoEntity, onClick: () -> Unit) {
             /* 详细内容（note）不上列表：点名称后在详情层查看，保持卡片轻 */
             if (!isEvent) {
                 Row(Modifier.padding(top = 7.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                    TagChip(m.tag, tagFg, tagBg)
+                    tags.take(3).forEach { t ->
+                        val (fg, bg) = tagColors(t)
+                        TagChip(t, fg, bg, Modifier.padding(end = 5.dp))
+                    }
+                    if (tags.size > 3) {
+                        Text("+${tags.size - 3}", fontSize = 10.sp, color = MaterialTheme.colorScheme.outline)
+                    }
                     if (m.privateOnly) {
-                        TagChip("仅自己", MaterialTheme.colorScheme.onSurfaceVariant, c.tagBg)
-                        Box(Modifier.padding(start = 8.dp))
+                        TagChip("仅自己", MaterialTheme.colorScheme.onSurfaceVariant, c.tagBg, Modifier.padding(start = 5.dp))
                     }
                     Text(
                         " · " + Dates.relTime(m.createdAt),

@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.xiaoman.memo.data.AppViewModel
 import com.xiaoman.memo.data.MemoEntity
+import com.xiaoman.memo.domain.tagList
 import com.xiaoman.memo.ui.components.Seg
 import com.xiaoman.memo.ui.components.SwitchRow
 import com.xiaoman.memo.ui.components.Tick
@@ -51,7 +52,8 @@ fun EditorScreen(nav: NavHostController, vm: AppViewModel, memoId: Long) {
     val me = vm.ui.collectAsState().value.profile.identity
 
     var text by remember { mutableStateOf("") }
-    var tag by remember { mutableStateOf("生活") }
+    /* v6：多标签编辑；第一个为主标签（写进 tag 列） */
+    var tags by remember { mutableStateOf(listOf("生活")) }
     var isTodo by remember { mutableStateOf(false) }
     var reminder by remember { mutableStateOf(false) }
     var privateOnly by remember { mutableStateOf(false) }
@@ -69,7 +71,7 @@ fun EditorScreen(nav: NavHostController, vm: AppViewModel, memoId: Long) {
         if (memoId != 0L) {
             vm.daoMemo(memoId)?.let { m ->
                 original = m
-                text = m.text; tag = m.tag; isTodo = m.isTodo; reminder = m.reminder
+                text = m.text; tags = m.tagList(); isTodo = m.isTodo; reminder = m.reminder
                 privateOnly = m.privateOnly
                 note = m.note; noteOpen = m.note.isNotBlank()
                 owner = when (m.owner) { "mine" -> 1; "partner" -> 2; else -> 0 }
@@ -80,14 +82,14 @@ fun EditorScreen(nav: NavHostController, vm: AppViewModel, memoId: Long) {
 
     // 事件的 kind/eventDate 通过 copy 自动保留；note 在下方「详细内容」控件编辑
     val dirty = original?.let {
-        it.text != text || it.tag != tag || it.isTodo != isTodo || it.reminder != reminder ||
+        it.text != text || it.tagList() != tags || it.isTodo != isTodo || it.reminder != reminder ||
             it.privateOnly != privateOnly || it.note != note.trim()
     } ?: (text.isNotBlank())
 
     BackHandler(enabled = dirty && loaded) { confirmExit = true }
 
     val uiTags by vm.ui.collectAsState()
-    val tags = remember(uiTags.customTags) { com.xiaoman.memo.domain.allTags(uiTags.customTags.map { it.name }) }
+    val tagOptions = remember(uiTags.customTags) { com.xiaoman.memo.domain.allTags(uiTags.customTags.map { it.name }) }
     var showNewTag by remember { mutableStateOf(false) }
     /* 标签管理：自定义标签以前只能加不能删（vm.deleteCustomTag 全项目零调用）。 */
     var showTagManage by remember { mutableStateOf(false) }
@@ -101,8 +103,10 @@ fun EditorScreen(nav: NavHostController, vm: AppViewModel, memoId: Long) {
         if (title.isBlank()) { saveHint = "写点什么再保存"; return }
         val ownerStr = if (privateOnly) "mine" else listOf("shared", "mine", "partner")[owner]
         val author = if (owner == 2 && original == null) (if (me == "her") "him" else "her") else (original?.author ?: me)
-        val entity = (original ?: MemoEntity(text = "", tag = tag, author = me, createdAt = 0, updatedAt = 0)).copy(
-            text = title, tag = tag, isTodo = isTodo, reminder = reminder, privateOnly = privateOnly,
+        val list = com.xiaoman.memo.domain.normalizeTagList(tags)
+        val entity = (original ?: MemoEntity(text = "", tag = com.xiaoman.memo.domain.primaryTag(list), author = me, createdAt = 0, updatedAt = 0)).copy(
+            text = title, tag = com.xiaoman.memo.domain.primaryTag(list), tags = com.xiaoman.memo.domain.joinTags(list),
+            isTodo = isTodo, reminder = reminder, privateOnly = privateOnly,
             owner = ownerStr, author = author, note = note.trim(),
         )
         vm.saveMemo(entity)
@@ -173,9 +177,17 @@ fun EditorScreen(nav: NavHostController, vm: AppViewModel, memoId: Long) {
         }
 
         XmCard {
-            Row(Modifier.padding(vertical = 13.dp)) { Text("标签", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface) }
+            Row(Modifier.padding(vertical = 13.dp)) { Text("标签（可多选）", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface) }
             com.xiaoman.memo.ui.components.ChipRow {
-                tags.forEach { t -> XmChip(t, on = tag == t) { tag = t } }
+                tagOptions.forEach { t ->
+                    XmChip(t, on = tags.contains(t)) {
+                        tags = if (tags.contains(t)) {
+                            if (tags.size > 1) tags - t else tags
+                        } else {
+                            (tags + t).take(com.xiaoman.memo.domain.MAX_TAGS)
+                        }
+                    }
+                }
                 // 动作形态：与上面的可选中标签明确区分
                 com.xiaoman.memo.ui.components.XmActionChip("＋ 新标签") { showNewTag = true }
                 if (uiTags.customTags.isNotEmpty()) {
@@ -235,7 +247,7 @@ fun EditorScreen(nav: NavHostController, vm: AppViewModel, memoId: Long) {
             confirmButton = {
                 TextButton(onClick = {
                     vm.addCustomTag(tagName) { ok ->
-                        if (ok) tag = tagName.trim()
+                        if (ok) tags = (tags + tagName.trim()).distinct().take(com.xiaoman.memo.domain.MAX_TAGS)
                     }
                     showNewTag = false
                 }) { Text("添加", color = c.accentDeep) }
@@ -278,7 +290,7 @@ fun EditorScreen(nav: NavHostController, vm: AppViewModel, memoId: Long) {
                 TextButton(onClick = {
                     val n = tagToDel
                     tagToDel = ""
-                    if (tag == n) tag = "生活"     // 当前选中的标签被删了，回落到默认标签
+                    if (tags.contains(n)) tags = (tags - n).ifEmpty { listOf("生活") }   // 当前选中的标签被删了，回落到默认标签
                     vm.deleteCustomTag(n)
                 }) { Text("删除", color = c.accentDeep) }
             },

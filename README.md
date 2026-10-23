@@ -6,7 +6,7 @@
 ![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-BOM%202024.10-4285F4?logo=jetpackcompose&logoColor=white)
 ![minSdk](https://img.shields.io/badge/minSdk-26%20(Android%208.0)-3DDC84?logo=android&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
-![version](https://img.shields.io/badge/version-1.4.8-blue)
+![version](https://img.shields.io/badge/version-1.5.0-blue)
 [![Android CI](https://github.com/ChencLi819/xiaoman-xiangban/actions/workflows/android-ci.yml/badge.svg?branch=main)](https://github.com/ChencLi819/xiaoman-xiangban/actions/workflows/android-ci.yml)
 
 一款给两个人用的**情侣备忘录**。不是日记，是轻、快、结构化的共同记忆：
@@ -53,7 +53,7 @@
 | --- | --- |
 | **此刻** | 速记条回车即存，想到什么随手一记 |
 | **说好的** | 共享清单，勾选留痕，完整增删改 |
-| **点滴** | 全部备忘，标签 + 关键词检索筛选 |
+| **点滴** | 全部备忘，多标签（最多 6 个）+ 关键词检索筛选，新建即可加自定义标签 |
 | **往后** | 约定与纪念日倒计时 |
 | **我们俩** | 聚合页：身份切换、双方名字与纪念日、数据导入导出 |
 
@@ -61,12 +61,13 @@
 
 - **雨过**：吵架记录。四选一归因（怪我 / 怪 TA / 各退一步 / 说不清）+ 情绪 + 火气 5 级，和好后「标记翻篇」
 - **说开了**：复盘与沉淀，「下次我们约好」可一键沉淀为约定
-- **抽一张**：翻篇抽签，内置 520 条 + 支持自己增删改
+- **抽一张**：翻篇抽签，五级火气各 520 条（共 2600 条，异地场景）+ 支持自己增删改
 - **分寸**：喜欢 / 讨厌 / 不能做 / 我们的规矩 × 她 / 他 / 共同，底线置顶，可标「需要对方确认」
 
 ### 心意
 
-- **互动 / 互动库**：520 条（真心话 110 · 大冒险 100 · 情侣任务 110 · 情话 109 · 默契问答 91），优先抽没玩过的，支持收藏与四维筛选
+- **互动 / 互动库**：2189 条（真心话 520 · 大冒险 520 · 情侣任务 520 · 情话 109 · 默契问答 520），优先抽没玩过的，支持收藏与分类筛选
+- **翻翻看**：互动库的独立入口与独立页面，父页面只留通道卡；页内可按关键词 / 分类 / 收藏 / 已玩筛选
 - **情书**：按月归档、关键词搜索、可插入图片，双色作者区分
 - **相册**：系统选择器批量导入，按月分组，可改归属与备注
 
@@ -79,7 +80,7 @@
 
 ### 系统级能力
 
-- **桌面小部件**：2×1「TA 还没写 / 你已写 N 条 + 一键记一条」、4×2「共同待办 + 周期状态」，数据变更即刷新
+- **桌面小部件（6 个）**：2×1「今天」（TA 写了没 + 一键记一条）、4×2「要一起做的」（共同待办 + 周期状态）、4×2「说好的」（清单进度 + 没勾的）、2×2「还有几天」（最近约定倒计时 + 在一起天数）、4×2「点滴」（最近三条）、2×1「今日一句」（按日期轮换情话），数据变更即刷新
 - **App Shortcuts**：长按图标直达「记一条 / 写情书 / 抽一张」
 - **每日提醒**：单一通知 channel，WorkManager 定时检查今日约定、未完成待办、经期开始日
 - **深链**：`xiaoman://`
@@ -111,6 +112,10 @@
 | --- | --- | --- | --- |
 | `local` | 小满 | `com.xiaoman.memo` | 纯离线单机版，无同步 UI |
 | `sync` | 小满·相伴 | `com.xiaoman.memo.sync` | 带 WebDAV 双端同步 |
+
+> **debug 版与正式版的数据**：两者共用同一个 `applicationId` 与签名，正式版可直接覆盖安装 debug 版，
+> 数据库走 Room 迁移原地升级，历史数据保留。换签名 / 换手机请用设置里的「完整迁移包（含图片）」。
+> ⚠️ 数据库只升不降，装过高版本后再装旧版本会打不开（App 会提示、不会清库），详见 [docs/migration.md](docs/migration.md)。
 
 ### 同步怎么用（sync 版）
 
@@ -185,7 +190,7 @@ sdk.dir=<你的本机 Android SDK 路径>
 │       │   ├── components/      # 通用卡片 / chips / 翻卡动画
 │       │   ├── nav/             # 5 Tab + 子路由 + 深链
 │       │   └── screens/         # 各功能页
-│       ├── widget/              # 2×1 / 4×2 桌面小部件
+│       ├── widget/              # 6 个桌面小部件（2×1 / 2×2 / 4×2）
 │       └── remind/              # 通知 channel + 每日提醒 Worker
 ├── docs/
 │   ├── technical.md             # 架构与关键实现取舍

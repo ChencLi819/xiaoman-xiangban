@@ -196,6 +196,9 @@ interface XiaomanDao {
     @Query("SELECT * FROM photos WHERE deleted=0 ORDER BY ts DESC")
     fun photos(): Flow<List<PhotoEntity>>
 
+    @Query("SELECT * FROM photos")
+    suspend fun photosAllOnce(): List<PhotoEntity>
+
     @Query("SELECT * FROM photos WHERE id=:id")
     suspend fun photo(id: Long): PhotoEntity?
 

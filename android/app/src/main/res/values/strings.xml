@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- app_name 由 flavor 的 resValue 提供：local=小满，sync=小满·相伴 -->
+    <string name="w_desc_lists">说好的 · 清单进度与前几件没勾的事</string>
+    <string name="w_desc_countdown">往后 · 最近的约定还有几天</string>
+    <string name="w_desc_memos">点滴 · 最近记下的三条</string>
+    <string name="w_desc_quote">今日一句 · 每天换一句情话</string>
 </resources>
