@@ -55,6 +55,17 @@ fun HomeScreen(nav: NavHostController, vm: AppViewModel, onTab: (Int) -> Unit = 
     val phase = ui.phaseToday
     val st = ui.cycleStats
 
+    /* ── 心晴：今天的心情（当前身份一条，一人一天一条）── */
+    val todayStr = Dates.fmt(Dates.today())
+    val me = ui.profile.identity.ifBlank { "her" }
+    val partner = if (me == "him") "her" else "him"
+    val myMoodToday = ui.moods.find { it.date == todayStr && it.author == me }
+    val myMoodYesterday = ui.moods.find { it.date == Dates.addDays(todayStr, -1) && it.author == me }
+    val partnerMoodToday = ui.moods.find { it.date == todayStr && it.author == partner }
+    val partnerName = if (partner == "him") ui.profile.himName.ifBlank { "他" } else ui.profile.herName.ifBlank { "她" }
+    /* 非空 = 大图页开着（选完先看图，确认才落库） */
+    var bigMood by remember { mutableStateOf<String?>(null) }
+
     /* 「最近」= 备忘 + 清单条目 + 约定 三个板块的最新动态，按时间排，只取 3 条 */
     data class RecentEntry(val time: Long, val kind: String, val text: String, val target: Int, val memoId: Long = 0L)
     val recent = buildList {
@@ -93,6 +104,20 @@ fun HomeScreen(nav: NavHostController, vm: AppViewModel, onTab: (Int) -> Unit = 
                 Box(Modifier.weight(1f))
                 PairAvatars(ui.profile.herName, ui.profile.himName)
             }
+        }
+
+        /* 心晴 · 今日心情卡（在「随手记一件」上面） */
+        item {
+            TodayMoodCard(
+                me = me,
+                mine = myMoodToday,
+                yesterday = myMoodYesterday,
+                partnerName = partnerName,
+                partnerToday = partnerMoodToday,
+                onPick = { bigMood = it },
+                onOpenBig = { bigMood = myMoodToday?.mood ?: "tian" },
+                onGoHistory = { nav.navigate(R.MOOD) },
+            )
         }
 
         /* 速记条：三秒记下一件事 */
@@ -145,7 +170,6 @@ fun HomeScreen(nav: NavHostController, vm: AppViewModel, onTab: (Int) -> Unit = 
         }
 
         /* B2：到期当天轻提醒（应用内，不强制通知栏） */
-        val todayStr = Dates.fmt(Dates.today())
         val todayPlans = ui.plans.filter { it.date == todayStr }
         if (todayPlans.isNotEmpty()) {
             item {
@@ -323,6 +347,17 @@ fun HomeScreen(nav: NavHostController, vm: AppViewModel, onTab: (Int) -> Unit = 
                 Text("›", fontSize = 13.sp, color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(start = 6.dp))
             }
         }
+    }
+
+    /* 心晴大图页：选完先看图，确认才写库 */
+    bigMood?.let { key ->
+        MoodBigDialog(
+            author = me,
+            initialKey = key,
+            dateText = Dates.headerToday(),
+            onDismiss = { bigMood = null },
+            onConfirm = { picked -> vm.setMood(picked) { bigMood = null } },
+        )
     }
 
     /* 添加：新建一条待办备忘（默认标签「待办」、归属当前身份、共同可见） */

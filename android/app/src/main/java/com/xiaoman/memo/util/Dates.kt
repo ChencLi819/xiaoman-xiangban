@@ -16,6 +16,51 @@ object Dates {
     fun cn(s: String): String = "${parse(s).monthValue}月${parse(s).dayOfMonth}日"
     fun cnFull(s: String): String = parse(s).let { "${it.year}年${it.monthValue}月${it.dayOfMonth}日" }
 
+    /* ── 年份感知格式化 ──
+       同年只写「M月d日」，跨年必须带年「yyyy年M月d日」。
+       历史记录、预测区间跨年时靠它区分，避免第二年出现两个「11月6日」。 */
+    fun yearOf(s: String): Int = parse(s).year
+
+    /** 与 refYear 同年 →「11月6日」；否则 →「2025年11月6日」 */
+    fun cnY(s: String, refYear: Int = today().year): String {
+        if (s.isBlank()) return ""
+        val d = parse(s)
+        return if (d.year == refYear) "${d.monthValue}月${d.dayOfMonth}日"
+        else "${d.year}年${d.monthValue}月${d.dayOfMonth}日"
+    }
+
+    /** 永远带年（用于列表年份分组之外的强区分场景） */
+    fun cnAbs(s: String): String = if (s.isBlank()) "" else cnFull(s)
+
+    /** 区间文案：同年简写月日，跨年两侧都带年，如「2026年12月28日 – 2027年1月4日」 */
+    fun cnRange(a: String, b: String, refYear: Int = today().year): String {
+        if (a.isBlank()) return ""
+        if (b.isBlank()) return cnY(a, refYear)
+        val ea = yearOf(a); val eb = yearOf(b)
+        return if (ea == eb && ea == refYear) "${cn(a)} – ${cn(b)}"
+        else if (ea == eb) "${ea}年${cn(a)} – ${cn(b)}"
+        else "${ea}年${cn(a)} – ${eb}年${cn(b)}"
+    }
+
+    /** 年份标签：「2026年」 */
+    fun yearLabel(y: Int): String = "${y}年"
+
+    /* ── 时间戳 → 日期 / 时刻（云笺等「带时分」场景） ── */
+    private val HM: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+
+    fun dateOf(epochMs: Long): String =
+        java.time.Instant.ofEpochMilli(epochMs).atZone(java.time.ZoneId.systemDefault()).toLocalDate().format(ISO)
+
+    fun timeOf(epochMs: Long): String =
+        java.time.Instant.ofEpochMilli(epochMs).atZone(java.time.ZoneId.systemDefault()).toLocalTime().format(HM)
+
+    /** 「2026年10月24日 21:07」；同年可只写月日 */
+    fun stampCn(epochMs: Long, withYear: Boolean = true): String {
+        if (epochMs <= 0) return ""
+        val s = dateOf(epochMs)
+        return (if (withYear) cnFull(s) else cn(s)) + " " + timeOf(epochMs)
+    }
+
     private val WD = arrayOf("星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日")
     fun weekdayCn(d: LocalDate): String = WD[d.dayOfWeek.value - 1]
 

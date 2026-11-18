@@ -26,6 +26,25 @@ __pycache__/
 *.pyc
 node_modules/
 
+# 卡面生成用的 AI 原图：体积大（16 MB）且只有其中一张被 gen_widget_boards.py 用到，
+# 卡面位图已随包入库，不必要连原图一起进仓库
+generated-images/
+
+# 生图素材的中间态：src 是抠图前的原稿、_bak 是上一版，均无任何引用
+docs/prototype/assets/mood/src/
+docs/prototype/assets/mood/_bak/
+
+# 原型迭代过程中的对比/草稿图（无引用）
+docs/prototype/_*.png
+
+# 截图采集的草稿图（下划线开头）与过渡期设计稿：无引用，
+# 且过渡期稿混着已删除的旧六件套卡片，留着会误导
+docs/screenshots/**/_*.png
+docs/screenshots/v1.6/widget-previews.png
+
+# 脚本备份
+*.py.bak
+
 # ── 本地会话记录（开发过程备忘，不入库）────────────
 .workbuddy/
 

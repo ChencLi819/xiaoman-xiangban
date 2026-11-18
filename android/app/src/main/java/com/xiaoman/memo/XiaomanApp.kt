@@ -25,8 +25,21 @@ class XiaomanApp : Application() {
         appScope.launch {
             Seeder.seedIfEmpty(db, settings)
         }
+        /* v1.6：把 v1.5.x 存在组件 DataStore 里的心情搬进 Room（只跑一次） */
+        val migrated = getSharedPreferences("xiaoman_migrate", MODE_PRIVATE)
+        if (!migrated.getBoolean("widget_mood_v7", false)) {
+            appScope.launch {
+                runCatching {
+                    com.xiaoman.memo.widget.WidgetData.migrateLegacyMoods(this@XiaomanApp) {
+                        com.xiaoman.memo.widget.WidgetUpdater.updateAll(this@XiaomanApp)
+                    }
+                    migrated.edit().putBoolean("widget_mood_v7", true).apply()
+                }
+            }
+        }
         com.xiaoman.memo.remind.Notifications.ensureChannels(this)
         scheduleDaily()
+        scheduleWidgetDaily()
         maybeAutoSync()
     }
 
@@ -76,5 +89,19 @@ class XiaomanApp : Application() {
         var next = now.toLocalDate().atTime(8, 30)
         if (!next.isAfter(now)) next = next.plusDays(1)
         return java.time.Duration.between(now, next).toMinutes()
+    }
+
+    /* 桌面小工具日更：00:05 跨天刷新（天数翻日 / 情话轮换） */
+    private fun scheduleWidgetDaily() {
+        val now = java.time.LocalDateTime.now()
+        var next = now.toLocalDate().plusDays(1).atTime(0, 5)
+        val req = PeriodicWorkRequestBuilder<com.xiaoman.memo.widget.WidgetDailyWorker>(24, TimeUnit.HOURS)
+            .setInitialDelay(java.time.Duration.between(now, next).toMinutes(), TimeUnit.MINUTES)
+            .build()
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "xiaoman_widget_daily",
+            ExistingPeriodicWorkPolicy.KEEP,
+            req,
+        )
     }
 }

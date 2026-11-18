@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ② 见面倒计时 2×2
+     外层 FrameLayout 铺满格子并居中卡片；内层卡片在 Android 12+
+     由代码按实例实际尺寸取 min(宽,高) 定成正方形，旧系统回退铺满。
+     排版：顶部「✈ 距下次见面」是卡内标签（10sp + letterSpacing 0.06），
+     与恋爱计时的「自 2023.03.14」同级；日期胶囊居中，躲开底图两角插画。 -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:id="@+id/w_root"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="center"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="@drawable/w_board_square"
+        android:padding="16dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:layout_width="10dp"
+                android:layout_height="10dp"
+                android:src="@drawable/w_ic_plane_gray"
+                android:contentDescription="@null" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:text="距下次见面"
+                android:textColor="@color/w_ink2"
+                android:textSize="11sp"
+                android:letterSpacing="0.02" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="4dp">
+
+            <TextView
+                android:id="@+id/w_mc_days"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:includeFontPadding="false"
+                android:text="23"
+                android:textColor="@color/w_accent"
+                android:textSize="32sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/w_mc_unit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:includeFontPadding="false"
+                android:layout_marginStart="4dp"
+                android:text="天"
+                android:textColor="@color/w_ink2"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/w_mc_pill"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/w_pill_him"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="4dp"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:text="11.15 · 成都"
+            android:textColor="@color/w_ink2"
+            android:textSize="11sp" />
+    </LinearLayout>
+</FrameLayout>

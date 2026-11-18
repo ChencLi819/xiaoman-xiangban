@@ -33,7 +33,7 @@ app/src/main/java/com/xiaoman/memo/
 │   ├── components/# 卡片 / chips / 勾选框 / 翻卡动画等通用组件
 │   ├── nav/       # 5 Tab + 全部子路由 + xiaoman:// 深链
 │   └── screens/   # 各功能页
-├── widget/        # 6 个桌面小部件（2×1 / 2×2 / 4×2，RemoteViews）
+├── widget/        # 8 个桌面小部件（2×2 / 4×2 / 4×1 / 3×3，RemoteViews）
 └── remind/        # 通知 channel + 每日提醒 Worker
 ```
 
@@ -52,6 +52,13 @@ Room 是唯一真相源。写入只落本地库，`AppViewModel` 通过 DAO 的 
 v6 给 `memos` 加了 `tags`（逗号分隔的多标签），并用旧的 `tag` 回填；`tag` 继续保留为「第一个标签」，
 旧版本 App 与旧同步快照只读 `tag` 也能拿到主标签。标签拆分/规范化集中在 `domain/Tags.kt`，
 写库前统一走 `normalizeTagList`，保证两列始终一致。
+
+### 心情：一人一天一条，靠「日期 + 人」定位
+
+v7 新增 `moods` 表。心情不是流水账而是**状态**：同一人同一天只该有一条，改心情就是改这一行（`updatedAt` 刷新，靠 LWW 传播），所以写入统一走 `AppViewModel.setMood`（先查当天该人，有则改、无则插），UI 与小工具都不直接 `insert`。
+故意**不加 `(date, author)` 唯一索引**：墓碑行会占住键位，让「删掉后又记一次」插不进去，与 v4 给 `custom_tags` 去掉 name 唯一索引是同一个理由。
+
+五档的键（`tian|xiang|lei|sang|qi`）、中文名与一句话文案集中在 `domain/Moods.kt`，App 与桌面小工具共用一份，避免两边文案漂移；插画按 key 直接映射 `res/drawable-nodpi/mood_<her|him>_<key>.png`（不走 `getIdentifier` 反射）。
 
 ### 合并语义统一走 LWW，不按表特判
 

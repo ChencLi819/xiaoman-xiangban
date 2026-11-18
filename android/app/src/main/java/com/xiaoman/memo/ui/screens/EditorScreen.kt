@@ -1,5 +1,7 @@
 package com.xiaoman.memo.ui.screens
 
+import android.widget.Toast
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -26,10 +28,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -38,6 +42,7 @@ import com.xiaoman.memo.data.AppViewModel
 import com.xiaoman.memo.data.MemoEntity
 import com.xiaoman.memo.domain.tagList
 import com.xiaoman.memo.ui.components.Seg
+import com.xiaoman.memo.ui.components.StrListSaver
 import com.xiaoman.memo.ui.components.SwitchRow
 import com.xiaoman.memo.ui.components.Tick
 import com.xiaoman.memo.ui.components.XmCard
@@ -47,23 +52,26 @@ import kotlinx.coroutines.flow.map
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
-fun EditorScreen(nav: NavHostController, vm: AppViewModel, memoId: Long) {
+/* draft：桌面小工具深链带入的草稿文本（memoId=0 时预填） */
+fun EditorScreen(nav: NavHostController, vm: AppViewModel, memoId: Long, draft: String = "") {
     val c = Xm
+    val ctx = LocalContext.current
     val me = vm.ui.collectAsState().value.profile.identity
 
-    var text by remember { mutableStateOf("") }
+    /* 表单全部 rememberSaveable：写到一半改字号 / 分屏重建也不丢 */
+    var text by rememberSaveable { mutableStateOf(draft) }
     /* v6：多标签编辑；第一个为主标签（写进 tag 列） */
-    var tags by remember { mutableStateOf(listOf("生活")) }
-    var isTodo by remember { mutableStateOf(false) }
-    var reminder by remember { mutableStateOf(false) }
-    var privateOnly by remember { mutableStateOf(false) }
-    var owner by remember { mutableStateOf(0) }
-    var loaded by remember { mutableStateOf(memoId == 0L) }
+    var tags by rememberSaveable(stateSaver = StrListSaver) { mutableStateOf(listOf("生活")) }
+    var isTodo by rememberSaveable { mutableStateOf(false) }
+    var reminder by rememberSaveable { mutableStateOf(false) }
+    var privateOnly by rememberSaveable { mutableStateOf(false) }
+    var owner by rememberSaveable { mutableStateOf(0) }
+    /* loaded 也要跨重建：重建后靠它判断「表单里是不是已经有用户改过的内容」，免得被库里的旧值盖掉 */
+    var loaded by rememberSaveable { mutableStateOf(memoId == 0L) }
     var original by remember { mutableStateOf<MemoEntity?>(null) }
-    var confirmExit by remember { mutableStateOf(false) }
     /* 详细内容：所有标签通用，控件可自由开关（收起=一行入口，展开=多行编辑） */
-    var note by remember { mutableStateOf("") }
-    var noteOpen by remember { mutableStateOf(false) }
+    var note by rememberSaveable { mutableStateOf("") }
+    var noteOpen by rememberSaveable { mutableStateOf(false) }
     /* 保存被挡下时的就地提示（以前是静默 no-op，看着像「保存没生效」） */
     var saveHint by remember { mutableStateOf("") }
 
@@ -71,11 +79,14 @@ fun EditorScreen(nav: NavHostController, vm: AppViewModel, memoId: Long) {
         if (memoId != 0L) {
             vm.daoMemo(memoId)?.let { m ->
                 original = m
-                text = m.text; tags = m.tagList(); isTodo = m.isTodo; reminder = m.reminder
-                privateOnly = m.privateOnly
-                note = m.note; noteOpen = m.note.isNotBlank()
-                owner = when (m.owner) { "mine" -> 1; "partner" -> 2; else -> 0 }
-                loaded = true
+                /* 只有首次进入才用库里的值铺表单；重建后保留用户正在改的内容，只把原记录取回来给保存用 */
+                if (!loaded) {
+                    text = m.text; tags = m.tagList(); isTodo = m.isTodo; reminder = m.reminder
+                    privateOnly = m.privateOnly
+                    note = m.note; noteOpen = m.note.isNotBlank()
+                    owner = when (m.owner) { "mine" -> 1; "partner" -> 2; else -> 0 }
+                    loaded = true
+                }
             }
         }
     }
@@ -84,9 +95,7 @@ fun EditorScreen(nav: NavHostController, vm: AppViewModel, memoId: Long) {
     val dirty = original?.let {
         it.text != text || it.tagList() != tags || it.isTodo != isTodo || it.reminder != reminder ||
             it.privateOnly != privateOnly || it.note != note.trim()
-    } ?: (text.isNotBlank())
-
-    BackHandler(enabled = dirty && loaded) { confirmExit = true }
+    } ?: (text.isNotBlank() || note.isNotBlank())
 
     val uiTags by vm.ui.collectAsState()
     val tagOptions = remember(uiTags.customTags) { com.xiaoman.memo.domain.allTags(uiTags.customTags.map { it.name }) }
@@ -95,12 +104,12 @@ fun EditorScreen(nav: NavHostController, vm: AppViewModel, memoId: Long) {
     var showTagManage by remember { mutableStateOf(false) }
     var tagToDel by remember { mutableStateOf("") }
 
-    fun save(onDone: () -> Unit) {
+    fun save(): Boolean {
         // 名称留空时用「详细内容」第一行兜底：内容已经写了就不该保存不上
         val title = text.trim().ifBlank {
             note.trim().lineSequence().firstOrNull { it.isNotBlank() }?.trim().orEmpty()
         }
-        if (title.isBlank()) { saveHint = "写点什么再保存"; return }
+        if (title.isBlank()) { saveHint = "写点什么再保存"; return false }
         val ownerStr = if (privateOnly) "mine" else listOf("shared", "mine", "partner")[owner]
         val author = if (owner == 2 && original == null) (if (me == "her") "him" else "her") else (original?.author ?: me)
         val list = com.xiaoman.memo.domain.normalizeTagList(tags)
@@ -110,8 +119,20 @@ fun EditorScreen(nav: NavHostController, vm: AppViewModel, memoId: Long) {
             owner = ownerStr, author = author, note = note.trim(),
         )
         vm.saveMemo(entity)
-        onDone()
+        return true
     }
+
+    /* 退出即保存：写过的内容直接落进列表，不用先点保存；空手退出就安静地退。
+       内容被清空时（编辑已有备忘）保存会被挡下，这时原记录保持不动，说一声再退，别把人卡在页面上。 */
+    fun exit() {
+        if (dirty) {
+            val ok = save()
+            Toast.makeText(ctx, if (ok) "已保存" else "内容为空，未保存", Toast.LENGTH_SHORT).show()
+        }
+        nav.popBackStack()
+    }
+
+    BackHandler { exit() }
 
     Column(
         Modifier
@@ -128,9 +149,7 @@ fun EditorScreen(nav: NavHostController, vm: AppViewModel, memoId: Long) {
                     .height(34.dp)
                     .clip(RoundedCornerShape(17.dp))
                     .background(MaterialTheme.colorScheme.surface)
-                    .clickable {
-                        if (dirty) confirmExit = true else nav.popBackStack()
-                    }
+                    .clickable { exit() }
                     .padding(horizontal = 14.dp),
                 contentAlignment = Alignment.Center,
             ) { Text("×", fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface) }
@@ -146,7 +165,7 @@ fun EditorScreen(nav: NavHostController, vm: AppViewModel, memoId: Long) {
                 color = c.accent, fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
                 modifier = Modifier
                     .clip(RoundedCornerShape(17.dp))
-                    .clickable { save { nav.popBackStack() } }
+                    .clickable { if (save()) nav.popBackStack() }
                     .padding(horizontal = 10.dp, vertical = 7.dp),
             )
         }
@@ -210,25 +229,11 @@ fun EditorScreen(nav: NavHostController, vm: AppViewModel, memoId: Long) {
                 .height(50.dp)
                 .clip(RoundedCornerShape(16.dp))
                 .background(c.accent)
-                .clickable { save { nav.popBackStack() } },
+                .clickable { if (save()) nav.popBackStack() },
             contentAlignment = Alignment.Center,
         ) {
             Text("保存到小满", color = MaterialTheme.colorScheme.onPrimary, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
         }
-    }
-
-    if (confirmExit) {
-        AlertDialog(
-            onDismissRequest = { confirmExit = false },
-            title = { Text("还没保存") },
-            text = { Text("要保存这条备忘，还是放弃编辑？") },
-            confirmButton = {
-                TextButton(onClick = { confirmExit = false; save { nav.popBackStack() } }) { Text("保存", color = c.accentDeep) }
-            },
-            dismissButton = {
-                TextButton(onClick = { confirmExit = false; nav.popBackStack() }) { Text("放弃") }
-            },
-        )
     }
 
     if (showNewTag) {

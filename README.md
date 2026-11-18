@@ -6,7 +6,7 @@
 ![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-BOM%202024.10-4285F4?logo=jetpackcompose&logoColor=white)
 ![minSdk](https://img.shields.io/badge/minSdk-26%20(Android%208.0)-3DDC84?logo=android&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
-![version](https://img.shields.io/badge/version-1.5.0-blue)
+![version](https://img.shields.io/badge/version-1.6.6-blue)
 [![Android CI](https://github.com/ChencLi819/xiaoman-xiangban/actions/workflows/android-ci.yml/badge.svg?branch=main)](https://github.com/ChencLi819/xiaoman-xiangban/actions/workflows/android-ci.yml)
 
 一款给两个人用的**情侣备忘录**。不是日记，是轻、快、结构化的共同记忆：
@@ -41,6 +41,18 @@
   <sub>雨过 · 吵架记录与翻篇 ｜ 分寸 · 偏好与边界 ｜ 互动 · 抽一张 ｜ 情书 · 按月归档 ｜ 周期 · 四阶段与预测</sub>
 </p>
 
+v1.6 新增的「心晴」与周期页调整：
+
+<p float="left">
+  <img src="docs/screenshots/v1.6/01-home-mood-empty.png" width="180" alt="此刻 · 未打卡"><img src="docs/screenshots/v1.6/02-mood-big.png" width="180" alt="心情大图页"><img src="docs/screenshots/v1.6/03-home-mood-done.png" width="180" alt="此刻 · 已打卡"><img src="docs/screenshots/v1.6/05-mood-calendar-me.png" width="180" alt="心晴 · 我"><img src="docs/screenshots/v1.6/06-mood-calendar-both.png" width="180" alt="心晴 · 两人">
+</p>
+<p align="left">
+  <sub>此刻 · 未打卡（只给五档纯文字）｜ 大图页 · 选完才看插画 ｜ 此刻 · 已打卡（收成一行）｜ 心晴 · 我 ｜ 心晴 · 两人（一格里上下两张）</sub>
+</p>
+
+> 上两排是 v1.5 时期的采集（此刻页尚无心情卡），v1.6 的新界面以下排为准。
+> 完整对照见 [docs/screenshots/v1.6/](docs/screenshots/v1.6/README.md)。
+
 > 截图来自 Android 15 模拟器（1080×2424，浅色模式），界面内容为**演示数据**，非真实用户记录。
 
 ---
@@ -69,10 +81,12 @@
 - **互动 / 互动库**：2189 条（真心话 520 · 大冒险 520 · 情侣任务 520 · 情话 109 · 默契问答 520），优先抽没玩过的，支持收藏与分类筛选
 - **翻翻看**：互动库的独立入口与独立页面，父页面只留通道卡；页内可按关键词 / 分类 / 收藏 / 已玩筛选
 - **情书**：按月归档、关键词搜索、可插入图片，双色作者区分
+- **云笺**：想对方了写一封寄过去。收到 / 我寄的两个分区，月份筛 + 关键词检索，未拆的有强调色竖条；只增不删，界面上没有撤回这回事
 - **相册**：系统选择器批量导入，按月分组，可改归属与备注
 
 ### 照顾她
 
+- **心晴**：每天的心情说给彼此听。五档（甜 / 想 / 累 / 丧 / 气）各配一张内置插画，一人一天一条；月历可切「我 / TA / 两人」，两人模式一格里上下两张并附图例
 - **周期**：经期记录与生理阶段描述（经期 / 卵泡期 / 排卵期 / 黄体期）、日历标记、下次经期推算
 
 > 周期板块**严格只做生理学叙述**：记录经期、描述生理阶段、推算下次经期。
@@ -80,7 +94,7 @@
 
 ### 系统级能力
 
-- **桌面小部件（6 个）**：2×1「今天」（TA 写了没 + 一键记一条）、4×2「要一起做的」（共同待办 + 周期状态）、4×2「说好的」（清单进度 + 没勾的）、2×2「还有几天」（最近约定倒计时 + 在一起天数）、4×2「点滴」（最近三条）、2×1「今日一句」（按日期轮换情话），数据变更即刷新
+- **桌面小部件（8 个）**：2×2「恋爱计时」（在一起第几天）、2×2「见面倒计时」（距下次见面）、2×2「心情打卡」（今天的心情，五档就地记）、2×2「情话小卡」（按日期轮换）、4×2「每日情话」（长情话 + 换一句）、4×1「快速记一笔」（点开即写）、4×1「雨过翻一篇」（把不开心翻篇）、3×3「相伴大卡」（天数 + 情话 + 快捷入口）。卡片铺满格子，数据变更即刷新
 - **App Shortcuts**：长按图标直达「记一条 / 写情书 / 抽一张」
 - **每日提醒**：单一通知 channel，WorkManager 定时检查今日约定、未完成待办、经期开始日
 - **深链**：`xiaoman://`
@@ -190,7 +204,7 @@ sdk.dir=<你的本机 Android SDK 路径>
 │       │   ├── components/      # 通用卡片 / chips / 翻卡动画
 │       │   ├── nav/             # 5 Tab + 子路由 + 深链
 │       │   └── screens/         # 各功能页
-│       ├── widget/              # 6 个桌面小部件（2×1 / 2×2 / 4×2）
+│       ├── widget/              # 8 个桌面小部件（2×2 / 4×2 / 4×1 / 3×3）
 │       └── remind/              # 通知 channel + 每日提醒 Worker
 ├── docs/
 │   ├── technical.md             # 架构与关键实现取舍

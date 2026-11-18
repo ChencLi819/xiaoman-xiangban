@@ -30,6 +30,8 @@ data class AppUiState(
     val actMarks: List<ActMarkEntity> = emptyList(),
     val customTags: List<CustomTagEntity> = emptyList(),
     val poolOverrides: List<PoolOverrideEntity> = emptyList(),
+    val moods: List<MoodEntity> = emptyList(),
+    val mails: List<MailEntity> = emptyList(),
     val actPool: List<ActItem> = emptyList(),
     val qPool: List<Quarrel.PoolItem> = emptyList(),
     val cycleStats: CycleStats? = null,
@@ -40,11 +42,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     private val db = XiaomanDb.get(app)
     private val dao = db.dao()
     val settings = SettingsStore(app)
+    val drafts = DraftStore(app)
 
     val ui: StateFlow<AppUiState> = combine(
         dao.memos(), dao.checklists(), dao.checklistItems(), dao.plans(),
         dao.quarrels(), dao.rules(), dao.cycles(), dao.letters(), dao.photos(), dao.actMarks(),
-        dao.customTags(), dao.poolOverrides(), settings.profile,
+        dao.customTags(), dao.poolOverrides(), settings.profile, dao.moods(), dao.mails(),
     ) { args ->
         @Suppress("UNCHECKED_CAST")
         val memos = args[0] as List<MemoEntity>
@@ -67,6 +70,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             actMarks = args[9] as List<ActMarkEntity>,
             customTags = args[10] as List<CustomTagEntity>,
             poolOverrides = overrides,
+            moods = args[13] as List<MoodEntity>,
+            mails = args[14] as List<MailEntity>,
             actPool = Pools.effectiveAct(overrides),
             qPool = Pools.effectivePool(overrides),
             cycleStats = st,
@@ -225,16 +230,75 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
     fun deleteRule(id: Long) = viewModelScope.launch { dao.softDeleteRule(id, now()); refreshWidgets() }
 
-    /* ── 周期（含每日记录；修改保留 uuid 走 LWW）── */
+    /* ── 周期（含每日记录；修改保留 uuid 走 LWW）──
+       日期列一律是 yyyy-MM-dd（含年份），跨年不会互相覆盖；
+       每日记录额外做同日合并：补录/编辑同一天时更新原来那条，不新增，避免出现两条同一天的当日记录。 */
     fun saveCycle(c: CycleEntity) = viewModelScope.launch {
-        if (c.id == 0L) dao.upsertCycle(c.copy(updatedAt = now()))
-        else dao.updateCycle(c.copy(updatedAt = now()))
+        var target = c
+        if (c.daily) {
+            val day = if (c.recordDate.isNotBlank()) c.recordDate else c.start
+            if (day.isNotBlank()) {
+                val exist = dao.dailyCycleOf(day)
+                if (exist != null && exist.id != c.id) {
+                    target = c.copy(id = exist.id, uuid = exist.uuid, recordDate = day, start = day)
+                }
+            }
+        }
+        if (target.id == 0L) dao.upsertCycle(target.copy(updatedAt = now()))
+        else dao.updateCycle(target.copy(updatedAt = now()))
         refreshWidgets()
     }
 
     suspend fun daoCycle(id: Long): CycleEntity? = dao.cycle(id)
 
     fun deleteCycle(id: Long) = viewModelScope.launch { dao.softDeleteCycle(id, now()); refreshWidgets() }
+
+    /* ── 心晴（每日心情）──
+       一人一天一条；换心情 = 更新同一行并刷新 updatedAt，同步按 LWW 传播。 */
+    /** 今天某人（默认当前身份）的心情，没有则 null */
+    fun moodToday(author: String = ""): MoodEntity? {
+        val a = author.ifBlank { ui.value.profile.identity }
+        val d = Dates.fmt(Dates.today())
+        return ui.value.moods.find { it.date == d && it.author == a }
+    }
+
+    /** 记下 / 换掉某天的心情（date 留空 = 今天，author 留空 = 当前身份） */
+    fun setMood(mood: String, author: String = "", date: String = "", onDone: () -> Unit = {}) = viewModelScope.launch {
+        val a = author.ifBlank { settings.profileOnce().identity }
+        val d = date.ifBlank { Dates.fmt(Dates.today()) }
+        val cur = dao.moodOf(d, a)
+        if (cur == null) {
+            dao.upsertMood(MoodEntity(date = d, author = a, mood = mood, createdAt = now(), updatedAt = now()))
+        } else {
+            dao.updateMood(cur.copy(mood = mood, updatedAt = now()))
+        }
+        refreshWidgets()
+        onDone()
+    }
+
+    /* ── 云笺 ──
+       写一封寄给对方：落地即完成，没有草稿箱、没有删除。
+       收件人永远是「另一个人」，所以只存发信人（author = 当前身份）。
+       sentAt 决定列表排序，也决定收件箱里「什么时候发的」那一行字。 */
+    fun sendMail(title: String, body: String, onDone: () -> Unit = {}) = viewModelScope.launch {
+        val t = title.trim()
+        val b = body.trim()
+        if (t.isBlank() && b.isBlank()) return@launch
+        dao.insertMail(
+            MailEntity(
+                author = settings.profileOnce().identity,
+                title = t,
+                body = b,
+                sentAt = now(),
+                updatedAt = now(),
+            ),
+        )
+        refreshWidgets()
+        onDone()
+    }
+
+    /** 拆信：只写 readAt（已读过就不动），未读竖条靠它消失 */
+    fun markMailRead(id: Long) = viewModelScope.launch { dao.markMailRead(id, now(), now()) }
 
     /* ── 情书 ── */
     fun saveLetter(l: LetterEntity, onDone: () -> Unit = {}) = viewModelScope.launch {
@@ -338,15 +402,25 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         return r
     }
 
-    /** 清空全部数据：物理清除所有表 + 情书/相册图片文件；不重灌样例 */
+    /** 清空全部数据：物理清除所有表 + 情书/相册图片文件 + 未写完的草稿；不重灌样例 */
     fun clearAllData(onDone: () -> Unit = {}) = viewModelScope.launch {
         dao.clearEverything()
         com.xiaoman.memo.util.ImageStore.dir(getApplication(), "photos").listFiles()?.forEach { it.delete() }
         com.xiaoman.memo.util.ImageStore.dir(getApplication(), "letters").listFiles()?.forEach { it.delete() }
+        drafts.clearAll()
         settings.markSeeded()
         refreshWidgets()
         onDone()
     }
+
+    /* ── 草稿（写一半退出时留下的内容）──
+       只留本机：不进同步快照、不进备份；一个场景一条，值里带 target（0 = 新建），
+       恢复时 target 对不上就忽略，避免把「写一半的新内容」盖到「正在改的老记录」上。 */
+    suspend fun readDraft(key: String): String? = drafts.read(key)
+    fun saveDraft(key: String, targetId: Long, payload: org.json.JSONObject) {
+        drafts.write(key, payload.put("target", targetId).toString())
+    }
+    fun clearDraft(key: String) = drafts.clear(key)
 
     /* ── 同步端（BuildConfig.SYNC_ENABLED 时 UI 才暴露）── */
     val syncConfig: StateFlow<SyncConfig> = settings.pair

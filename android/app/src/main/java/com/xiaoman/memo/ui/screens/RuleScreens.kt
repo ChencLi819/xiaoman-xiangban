@@ -39,14 +39,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.xiaoman.memo.data.AppViewModel
+import com.xiaoman.memo.data.DraftKey
 import com.xiaoman.memo.data.RuleEntity
+import com.xiaoman.memo.ui.components.AutoDraft
 import com.xiaoman.memo.ui.components.EmptyView
 import com.xiaoman.memo.ui.components.SwitchRow
 import com.xiaoman.memo.ui.components.TagChip
 import com.xiaoman.memo.ui.components.XmCard
 import com.xiaoman.memo.ui.components.XmChip
+import com.xiaoman.memo.ui.components.rememberDraft
 import com.xiaoman.memo.ui.theme.T
 import com.xiaoman.memo.ui.theme.Xm
+import org.json.JSONObject
 
 private val RCAT_NAME = mapOf("like" to "喜欢", "hate" to "讨厌", "never" to "不能做", "rule" to "我们的规矩")
 private val RWHO_NAME = mapOf("her" to "她", "him" to "他", "both" to "共同")
@@ -211,7 +215,6 @@ fun RuleEditScreen(nav: NavHostController, vm: AppViewModel, ruleId: Long = 0L) 
     var loaded by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(ruleId == 0L) }
     /* 保存被挡下时就地提示（以前是静默 return，看着像「保存没反应」） */
     var saveHint by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("") }
-    var confirmExit by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
     var confirmDel by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
 
     fun fingerprint() = listOf(cat, who, text.trim(), line.toString(), agreed.toString()).joinToString("|")
@@ -227,6 +230,10 @@ fun RuleEditScreen(nav: NavHostController, vm: AppViewModel, ruleId: Long = 0L) 
         }
     }
 
+    val draft = rememberDraft(vm, DraftKey.RULE, ruleId)
+    /* 只续写一次：重建后表单里已经是用户最新的字，别拿 1.5 秒前的草稿盖回去 */
+    var resumed by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+
     fun saveNow(onDone: () -> Unit) {
         if (text.isBlank()) { saveHint = "写点什么再保存"; return }
         vm.saveRule(
@@ -236,12 +243,40 @@ fun RuleEditScreen(nav: NavHostController, vm: AppViewModel, ruleId: Long = 0L) 
                 uuid = uuid.ifBlank { java.util.UUID.randomUUID().toString() },
             ),
         )
+        /* 先清草稿再退出：否则页面离开组合时的兜底写入会把刚保存的内容又存回草稿 */
+        draft.finish()
         onDone()
     }
 
-    /* 新建：有输入就算脏；编辑：与载入时比对，改类别/归属/内容/开关都能识别出来 */
-    val dirty = if (ruleId == 0L) text.isNotBlank() else (originFp.isNotBlank() && fingerprint() != originFp)
-    BackHandler(enabled = dirty) { confirmExit = true }
+    /* 新建：与初始值比对，改过类别/归属/开关也算改过；编辑：与载入时比对 */
+    val dirty = if (ruleId == 0L) {
+        text.isNotBlank() || cat != "rule" || who != "both" || line || !agreed
+    } else {
+        originFp.isNotBlank() && fingerprint() != originFp
+    }
+
+    /* 进页面时续上没写完的一条（target 对不上就不动，不会把新内容盖到老记录上）。
+       等 loaded 再读：否则列表里的原值会随后铺上来，把草稿盖掉。 */
+    LaunchedEffect(ruleId, loaded) {
+        if (resumed || !loaded) return@LaunchedEffect
+        resumed = true
+        draft.read()?.let { o ->
+            cat = o.optString("cat", cat); who = o.optString("who", who)
+            text = o.optString("text"); line = o.optBoolean("line", line)
+            agreed = o.optBoolean("agreed", agreed)
+        }
+    }
+
+    AutoDraft(draft, dirty) {
+        if (!dirty) null
+        else JSONObject().apply {
+            put("cat", cat); put("who", who); put("text", text)
+            put("line", line); put("agreed", agreed)
+        }
+    }
+
+    /* 返回 = 存草稿走人：写一半的一条留在本机，下次进来接着写。 */
+    BackHandler { nav.popBackStack() }
 
     Column(
         Modifier
@@ -255,7 +290,7 @@ fun RuleEditScreen(nav: NavHostController, vm: AppViewModel, ruleId: Long = 0L) 
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 Modifier.height(34.dp).clip(RoundedCornerShape(17.dp)).background(MaterialTheme.colorScheme.surface)
-                    .clickable { if (dirty) confirmExit = true else nav.popBackStack() }.padding(horizontal = 14.dp),
+                    .clickable { nav.popBackStack() }.padding(horizontal = 14.dp),
                 contentAlignment = Alignment.Center,
             ) { Text("×", fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface) }
             Text(if (ruleId == 0L) "记一条" else "改一条", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
@@ -328,25 +363,11 @@ fun RuleEditScreen(nav: NavHostController, vm: AppViewModel, ruleId: Long = 0L) 
             title = { Text("删掉这条？") },
             text = { Text("删掉后对方那边也会同步删除。") },
             confirmButton = {
-                TextButton(onClick = { confirmDel = false; vm.deleteRule(ruleId); nav.popBackStack() }) {
+                TextButton(onClick = { confirmDel = false; vm.deleteRule(ruleId); draft.finish(); nav.popBackStack() }) {
                     Text("删除", color = c.accentDeep)
                 }
             },
             dismissButton = { TextButton(onClick = { confirmDel = false }) { Text("取消") } },
-        )
-    }
-
-    if (confirmExit) {
-        AlertDialog(
-            onDismissRequest = { confirmExit = false },
-            title = { Text("还没保存") },
-            text = { Text("要保存这条，还是放弃？") },
-            confirmButton = {
-                TextButton(onClick = { confirmExit = false }) { Text("继续编辑") }
-            },
-            dismissButton = {
-                TextButton(onClick = { confirmExit = false; nav.popBackStack() }) { Text("放弃") }
-            },
         )
     }
 }

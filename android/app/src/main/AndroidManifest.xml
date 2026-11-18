@@ -38,82 +38,120 @@
                 android:resource="@xml/shortcuts" />
         </activity>
 
-        <!-- 桌面小部件 2×1：TA 今天写了没 + 一键记一条 -->
+        <!-- ── 新一代桌面小工具（docs/prototype/widgets.html · 8 个）── -->
+
+        <!-- ① 恋爱计时 2×2 -->
         <receiver
-            android:name=".widget.WidgetSmall"
+            android:name=".widget.DayCounterWidget"
             android:exported="false"
-            android:label="小满 · 今天">
+            android:label="小满 · 恋爱计时">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/widget_small_info" />
+                android:resource="@xml/widget_day_counter_info" />
         </receiver>
 
-        <!-- 桌面小部件 4×2：共同待办 + 周期状态 -->
+        <!-- ② 见面倒计时 2×2 -->
         <receiver
-            android:name=".widget.WidgetLarge"
+            android:name=".widget.MeetCountdownWidget"
             android:exported="false"
-            android:label="小满 · 要一起做的">
+            android:label="小满 · 见面倒计时">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/widget_large_info" />
+                android:resource="@xml/widget_meet_countdown_info" />
         </receiver>
 
-        <!-- 桌面小部件 4×2：「说好的」清单进度与未勾项 -->
+        <!-- ③ 心情打卡 2×2 -->
         <receiver
-            android:name=".widget.WidgetLists"
+            android:name=".widget.MoodCheckWidget"
             android:exported="false"
-            android:label="小满 · 说好的">
+            android:label="小满 · 心情打卡">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/widget_lists_info" />
+                android:resource="@xml/widget_mood_info" />
         </receiver>
 
-        <!-- 桌面小部件 2×2：最近的约定倒计时 -->
+        <!-- ④ 情话小卡 2×2 -->
         <receiver
-            android:name=".widget.WidgetCountdown"
+            android:name=".widget.LoveQuoteSmallWidget"
             android:exported="false"
-            android:label="小满 · 还有几天">
+            android:label="小满 · 情话小卡">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/widget_countdown_info" />
+                android:resource="@xml/widget_quote_small_info" />
         </receiver>
 
-        <!-- 桌面小部件 4×2：最近三条点滴 -->
+        <!-- ⑤ 每日情话 4×2 -->
         <receiver
-            android:name=".widget.WidgetMemos"
+            android:name=".widget.LoveQuoteWideWidget"
             android:exported="false"
-            android:label="小满 · 点滴">
+            android:label="小满 · 每日情话">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/widget_memos_info" />
+                android:resource="@xml/widget_quote_wide_info" />
         </receiver>
 
-        <!-- 桌面小部件 2×1：今日一句（每天换一句情话） -->
+        <!-- ⑥ 快速记一笔 4×1 -->
         <receiver
-            android:name=".widget.WidgetQuote"
+            android:name=".widget.QuickMemoWidget"
             android:exported="false"
-            android:label="小满 · 今日一句">
+            android:label="小满 · 快速记一笔">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/widget_quote_info" />
+                android:resource="@xml/widget_quick_memo_info" />
         </receiver>
+
+        <!-- ⑦ 雨过翻一篇 4×1 -->
+        <receiver
+            android:name=".widget.RainPassWidget"
+            android:exported="false"
+            android:label="小满 · 雨过翻一篇">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_rain_info" />
+        </receiver>
+
+        <!-- ⑧ 相伴大卡 4×3 -->
+        <receiver
+            android:name=".widget.ComboWidget"
+            android:exported="false"
+            android:label="小满 · 相伴">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_combo_info" />
+        </receiver>
+
+        <!-- 心情打卡无界面写库回调 -->
+        <receiver
+            android:name=".widget.MoodActionReceiver"
+            android:exported="false" />
+
+        <!-- 情话「换一句」回调 -->
+        <receiver
+            android:name=".widget.QuoteRefreshReceiver"
+            android:exported="false" />
     </application>
 </manifest>

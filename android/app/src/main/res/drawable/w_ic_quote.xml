@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 引号图标：替代 3×3 入口里用文字「“」凑图标（字重/基线都与另外三枚矢量图标不一致） -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="@color/w_her_ink"
+        android:pathData="M9.5,15.5H5.2c-0.7,0 -1.2,-0.5 -1.2,-1.2v-3.6c0,-3.1 1.9,-5.4 5.1,-5.9l0.6,1.8c-1.7,0.4 -2.7,1.5 -2.9,3.3h2.7c0.7,0 1.2,0.5 1.2,1.2v3.2c0,0.7 -0.5,1.2 -1.2,1.2z" />
+    <path
+        android:fillColor="@color/w_her_ink"
+        android:pathData="M18.8,15.5h-4.3c-0.7,0 -1.2,-0.5 -1.2,-1.2v-3.6c0,-3.1 1.9,-5.4 5.1,-5.9l0.6,1.8c-1.7,0.4 -2.7,1.5 -2.9,3.3h2.7c0.7,0 1.2,0.5 1.2,1.2v3.2c0,0.7 -0.5,1.2 -1.2,1.2z" />
+</vector>

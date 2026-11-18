@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- app_name 由 flavor 的 resValue 提供：local=小满，sync=小满·相伴 -->
-    <string name="w_desc_lists">说好的 · 清单进度与前几件没勾的事</string>
-    <string name="w_desc_countdown">往后 · 最近的约定还有几天</string>
-    <string name="w_desc_memos">点滴 · 最近记下的三条</string>
-    <string name="w_desc_quote">今日一句 · 每天换一句情话</string>
+    <string name="w_desc_day_counter">恋爱计时 · 在一起第几天</string>
+    <string name="w_desc_meet">见面倒计时 · 距下次见面</string>
+    <string name="w_desc_mood">心情打卡 · 今天的心情</string>
+    <string name="w_desc_quote_small">情话小卡 · 每日情话</string>
+    <string name="w_desc_quote_wide">每日情话 · 换一句</string>
+    <string name="w_desc_quick_memo">快速记一笔 · 打开就写</string>
+    <string name="w_desc_rain">雨过翻一篇 · 把不开心翻篇</string>
+    <string name="w_desc_combo">相伴大卡 · 天数 + 情话 + 快捷入口</string>
 </resources>

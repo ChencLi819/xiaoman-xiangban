@@ -130,6 +130,7 @@ fun UsScreen(nav: NavHostController, vm: AppViewModel) {
 
         GroupBar("心意")
         EntryRow("♡", "互动", "${ui.actMarks.count { it.played }} 条已玩 · ${ui.actMarks.count { it.fav }} 条收藏", c.goldSoft, c.goldInk) { nav.navigate(R.INTERACT) }
+        EntryRow("☁", "云笺", mailSub(ui), c.okSoft, c.ok) { nav.navigate(R.MAILS) }
         EntryRow("✉", "情书", if (ui.letters.isEmpty()) "写给对方的话" else "${ui.letters.size} 封 · 最近 ${Dates.cn(ui.letters.first().date)}", c.himSoft, c.himInk) { nav.navigate(R.LETTERS) }
         EntryRow("▣", "相册", if (ui.photos.isEmpty()) "把本地照片放进来" else "${ui.photos.size} 张照片 · 点开可改归属", c.herSoft, c.herInk) { nav.navigate(R.PHOTOS) }
 
@@ -138,6 +139,11 @@ fun UsScreen(nav: NavHostController, vm: AppViewModel) {
         EntryRow("⚖", "分寸", if (ui.rules.isEmpty()) "记下彼此的喜欢与禁忌" else "${ui.rules.size} 条 · 底线 ${ui.rules.count { it.line }} 条", c.tagBg, MaterialTheme.colorScheme.onSurfaceVariant) { nav.navigate(R.RULES) }
 
         GroupBar("照顾她")
+        EntryRow(
+            "", "心晴", if (ui.moods.isEmpty()) "还没有记录" else "已记 ${ui.moods.size} 条",
+            c.herSoft, c.herInk,
+            iconRes = com.xiaoman.memo.R.drawable.mood_her_tian,
+        ) { nav.navigate(R.MOOD) }
         EntryRow("◍", "周期", if (ui.phaseToday == null) "记录与预测" else "${ui.phaseToday!!.name} · 平均 ${ui.cycleStats?.avgCycle ?: 28} 天", c.calP, c.calPInk) { nav.navigate(R.CYCLE) }
 
         if (com.xiaoman.memo.BuildConfig.SYNC_ENABLED) {
@@ -481,6 +487,14 @@ private fun quarrelSub(ui: com.xiaoman.memo.data.AppUiState): String {
     return "${ui.quarrels.size} 次 · 最近一次 $latest · ${if (resolved == ui.quarrels.size) "都已翻篇" else "$resolved 次已翻篇"}"
 }
 
+private fun mailSub(ui: com.xiaoman.memo.data.AppUiState): String {
+    val inbox = ui.mails.filter { it.author != ui.profile.identity }
+    if (inbox.isEmpty()) return "还没有信"
+    val unread = inbox.count { it.readAt == 0L }
+    val latest = Dates.cnY(Dates.dateOf(inbox.first().sentAt))
+    return if (unread > 0) "$unread 封未拆 · 最近 $latest" else "共 ${inbox.size} 封 · 最近 $latest"
+}
+
 @Composable
 private fun GroupBar(text: String) {
     Text(
@@ -492,7 +506,14 @@ private fun GroupBar(text: String) {
 }
 
 @Composable
-private fun EntryRow(icon: String, title: String, sub: String, bg: androidx.compose.ui.graphics.Color, fg: androidx.compose.ui.graphics.Color, onClick: () -> Unit) {
+private fun EntryRow(
+    icon: String, title: String, sub: String,
+    bg: androidx.compose.ui.graphics.Color, fg: androidx.compose.ui.graphics.Color,
+    /* v1.6：「心晴」入口用插画当图标，其余行仍用字符图标。
+       放在 onClick 之前：否则尾随 lambda 会绑到 iconRes 上，旧调用全部失效 */
+    iconRes: Int? = null,
+    onClick: () -> Unit,
+) {
     Row(
         Modifier
             .shadow(elevation = 2.dp, shape = RoundedCornerShape(16.dp), ambientColor = androidx.compose.ui.graphics.Color(0x33C9B8AE), spotColor = androidx.compose.ui.graphics.Color(0x33C9B8AE))
@@ -500,7 +521,15 @@ private fun EntryRow(icon: String, title: String, sub: String, bg: androidx.comp
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(Modifier.size(38.dp).clip(RoundedCornerShape(12.dp)).background(bg), contentAlignment = Alignment.Center) {
-            Text(icon, fontSize = 16.sp, color = fg)
+            if (iconRes != null) {
+                androidx.compose.foundation.Image(
+                    painter = androidx.compose.ui.res.painterResource(iconRes),
+                    contentDescription = title,
+                    modifier = Modifier.size(34.dp),
+                )
+            } else {
+                Text(icon, fontSize = 16.sp, lineHeight = 16.sp, color = fg)
+            }
         }
         Column(Modifier.padding(start = 12.dp).weight(1f)) {
             Text(title, fontSize = 15.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)

@@ -149,6 +149,10 @@ interface XiaomanDao {
     @Query("SELECT * FROM cycles WHERE id=:id")
     suspend fun cycle(id: Long): CycleEntity?
 
+    /* 某一天已有的「当日状态记录」：一天只留一条，跨年补录同一天时合并而不是新增 */
+    @Query("SELECT * FROM cycles WHERE deleted=0 AND daily=1 AND (start=:date OR recordDate=:date) LIMIT 1")
+    suspend fun dailyCycleOf(date: String): CycleEntity?
+
     @Query("UPDATE cycles SET deleted=1, updatedAt=:now WHERE id=:id")
     suspend fun softDeleteCycle(id: Long, now: Long)
 
@@ -259,6 +263,44 @@ interface XiaomanDao {
     @Query("SELECT * FROM pool_overrides WHERE kind=:kind AND op='edit' AND text=:text AND deleted=0 LIMIT 1")
     suspend fun findEditedOverride(kind: String, text: String): PoolOverrideEntity?
 
+    /* ── 心晴（每日心情，v7）── */
+    @Query("SELECT * FROM moods WHERE deleted=0 ORDER BY date DESC")
+    fun moods(): Flow<List<MoodEntity>>
+
+    @Query("SELECT * FROM moods")
+    suspend fun moodsAllOnce(): List<MoodEntity>
+
+    /** 当天某人的心情（一人一天一条；墓碑行不算） */
+    @Query("SELECT * FROM moods WHERE deleted=0 AND date=:date AND author=:author LIMIT 1")
+    suspend fun moodOf(date: String, author: String): MoodEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertMood(m: MoodEntity): Long
+
+    @Update
+    suspend fun updateMood(m: MoodEntity)
+
+    @Query("UPDATE moods SET deleted=1, updatedAt=:now WHERE id=:id")
+    suspend fun softDeleteMood(id: Long, now: Long)
+
+    /* ── 云笺（v8）：只增、只读，没有删除 ── */
+    @Query("SELECT * FROM mails WHERE deleted=0 ORDER BY sentAt DESC")
+    fun mails(): Flow<List<MailEntity>>
+
+    @Query("SELECT * FROM mails ORDER BY sentAt DESC")
+    suspend fun mailsAllOnce(): List<MailEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertMail(m: MailEntity): Long
+
+    /** 拆信：只改 readAt，不动正文与 sentAt（同步时按 LWW 传播） */
+    @Query("UPDATE mails SET readAt=:at, updatedAt=:now WHERE id=:id AND readAt=0")
+    suspend fun markMailRead(id: Long, at: Long, now: Long)
+
+    /** 同步合并用（仅取对方较新的读信时间；正文按 LWW 落地） */
+    @Update
+    suspend fun updateMail(m: MailEntity)
+
     /* ── 墓碑清理（同步成功后调用）：删除超过 30 天的墓碑行 ── */
     @Query("DELETE FROM memos WHERE deleted=1 AND updatedAt < :cutoff")
     suspend fun purgeMemos(cutoff: Long)
@@ -281,12 +323,18 @@ interface XiaomanDao {
     @Query("DELETE FROM pool_overrides WHERE deleted=1 AND updatedAt < :cutoff")
     suspend fun purgePoolOverrides(cutoff: Long)
 
+    @Query("DELETE FROM moods WHERE deleted=1 AND updatedAt < :cutoff")
+    suspend fun purgeMoods(cutoff: Long)
+
+    @Query("DELETE FROM mails WHERE deleted=1 AND updatedAt < :cutoff")
+    suspend fun purgeMails(cutoff: Long)
+
     @Transaction
     suspend fun purgeAllTombstones(cutoff: Long) {
         purgeMemos(cutoff); purgeChecklists(cutoff); purgeChecklistItems(cutoff)
         purgePlans(cutoff); purgeQuarrels(cutoff); purgeRules(cutoff)
         purgeCycles(cutoff); purgeLetters(cutoff); purgeCustomTags(cutoff)
-        purgePoolOverrides(cutoff)
+        purgePoolOverrides(cutoff); purgeMoods(cutoff); purgeMails(cutoff)
     }
 
     /* ── 统计 ── */
@@ -306,11 +354,14 @@ interface XiaomanDao {
     @Query("DELETE FROM act_marks") suspend fun clearActMarks()
     @Query("DELETE FROM custom_tags") suspend fun clearCustomTags()
     @Query("DELETE FROM pool_overrides") suspend fun clearPoolOverrides()
+    @Query("DELETE FROM moods") suspend fun clearMoods()
+    @Query("DELETE FROM mails") suspend fun clearMails()
 
     @Transaction
     suspend fun clearEverything() {
         clearMemos(); clearChecklists(); clearChecklistItems(); clearPlans()
         clearQuarrels(); clearRules(); clearCycles(); clearLetters()
         clearPhotos(); clearActMarks(); clearCustomTags(); clearPoolOverrides()
+        clearMoods(); clearMails()
     }
 }

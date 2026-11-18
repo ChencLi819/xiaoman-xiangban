@@ -374,6 +374,44 @@ object SyncEngine {
                 total += r.applied; conflicts += r.conflicts
             }
 
+            /* 心晴（每日心情）：uuid 键 + LWW；墓碑同样走 LWW，所以「今天没记」不会被误当成删除 */
+            Merge.mergeLists(
+                local = dao.moodsAllOnce(),
+                remote = arr("moods").map { md ->
+                    MoodEntity(
+                        date = md.optString("date"), author = md.optString("author", "her"),
+                        mood = md.optString("mood", "tian"), createdAt = md.optLong("createdAt", 0),
+                        uuid = md.optString("uuid"), updatedAt = md.optLong("updatedAt", 0),
+                        deleted = md.optBoolean("deleted"),
+                    )
+                },
+                key = { it.uuid }, stamp = { it.updatedAt }, idOf = { it.id },
+                withId = { r, id -> r.copy(id = id) }, amHost = amHost,
+            ).let { r ->
+                r.toInsert.forEach { dao.upsertMood(it) }
+                r.toUpdate.forEach { dao.updateMood(it) }
+                total += r.applied; conflicts += r.conflicts
+            }
+
+            /* 云笺：uuid 键 + LWW。只增不删 —— 对端带来的 deleted 一律按 false 落地 */
+            Merge.mergeLists(
+                local = dao.mailsAllOnce(),
+                remote = arr("mails").mapNotNull { ml ->
+                    val sentAt = ml.optLong("sentAt", 0)
+                    if (sentAt <= 0) null else MailEntity(
+                        author = ml.optString("author", "her"), title = ml.optString("title"),
+                        body = ml.optString("body"), sentAt = sentAt, readAt = ml.optLong("readAt", 0),
+                        uuid = ml.optString("uuid"), updatedAt = ml.optLong("updatedAt", 0), deleted = false,
+                    )
+                },
+                key = { it.uuid }, stamp = { it.updatedAt }, idOf = { it.id },
+                withId = { r, id -> r.copy(id = id) }, amHost = amHost,
+            ).let { r ->
+                r.toInsert.forEach { dao.insertMail(it) }
+                r.toUpdate.forEach { dao.updateMail(it) }
+                total += r.applied; conflicts += r.conflicts
+            }
+
             /* 互动标记：键 = text（主键），LWW，无墓碑（取消勾选即内容更新） */
             val localMarks = dao.actMarksOnce()
             arr("actMarks").forEach { mk ->

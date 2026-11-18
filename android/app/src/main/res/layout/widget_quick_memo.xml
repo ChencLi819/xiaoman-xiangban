@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ⑥ 快速记一笔 4×1（点击整条跳编辑页，桌面端不可输入）
+     左「+」圆标 26dp → 中间输入框胶囊 36dp（占满剩余宽度）→ 右「发送」圆标 26dp。
+     圆标里的图标统一 12dp；胶囊左内距 12dp，与圆标间距 8dp。 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/w_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:background="@drawable/w_board_slim2"
+    android:paddingStart="14dp"
+    android:paddingEnd="14dp"
+    android:paddingTop="12dp"
+    android:paddingBottom="12dp">
+
+    <FrameLayout
+        android:layout_width="26dp"
+        android:layout_height="26dp"
+        android:background="@drawable/w_circle_accent">
+
+        <ImageView
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:layout_gravity="center"
+            android:src="@drawable/w_ic_edit"
+            android:contentDescription="@null" />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/w_qm_pill"
+        android:layout_width="0dp"
+        android:layout_height="36dp"
+        android:layout_weight="1"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:background="@drawable/w_input_pill"
+        android:gravity="center_vertical"
+        android:includeFontPadding="false"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:text="今天想记点什么…"
+        android:textColor="@color/w_ink2"
+        android:textSize="12sp" />
+
+    <FrameLayout
+        android:layout_width="26dp"
+        android:layout_height="26dp"
+        android:background="@drawable/w_send_bg">
+
+        <ImageView
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:layout_gravity="center"
+            android:src="@drawable/w_ic_send"
+            android:contentDescription="@null" />
+    </FrameLayout>
+</LinearLayout>

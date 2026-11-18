@@ -1,8 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 桌面卡片色板（v1.6.4 · 一主色体系）
+     ─────────────────────────────────────────────────────────────
+     卡面是纸纹位图，实测中心纸色 #F9F4ED（相对亮度 0.913）。对比度按此计算：
+       w_ink  #12101A  17.2:1      w_ink2 #55505F  7.1:1
+       w_ink3 #5C5666   5.9:1      w_accent #B02F49 5.7:1
+     ─────────────────────────────────────────────────────────────
+     规则（上一版就是破了这几条才显得花）：
+     1) **全站只有一个强调色** w_accent。数字、引号、选中态都用它，不要再造第二个红
+        （旧的 w_accent_deep #93263E 与 w_her_ink #7C3F39 曾在同一张卡并排，肉眼分不出）。
+     2) 语义色（她/他/金/雨过）**只准用在图标和头像上**，不准再当正文颜色。
+        五个色相当文字色铺一排，就是调色盘。
+     3) 浅底只用两种：w_soft（暖米，承载信息块/入口格）与 w_accent_soft（只在选中/强调处出现一次）。
+     4) 10sp 只给页脚级信息，正文最小 11sp（中文 10sp 在 2.75x 密度下偏小）。 -->
 <resources>
     <color name="w_card">#FFFFFF</color>
-    <color name="w_ink">#2C2733</color>
-    <color name="w_ink2">#8E8794</color>
-    <color name="w_accent">#E86A7C</color>
-    <color name="w_ok">#4FA383</color>
+    <!-- 强调底上的前景色 -->
+    <color name="w_on_accent">#FFFFFF</color>
+
+    <!-- 墨色三级 -->
+    <color name="w_ink">#12101A</color>
+    <color name="w_ink2">#55505F</color>
+    <color name="w_ink3">#5C5666</color>
+
+    <!-- 唯一强调色 -->
+    <color name="w_accent">#B02F49</color>
+    <color name="w_accent_soft">#F7E4E1</color>
+
+    <!-- 浅底（信息块 / 胶囊 / 入口格） -->
+    <color name="w_soft">#F1E6D6</color>
+
+    <!-- 心情五档的「识别点」（4dp 小圆点用，不当文字色）：
+         同一明度与饱和度的一族色，靠色相区分；原来甜(#7C3F39)与气(#93263E)两个红肉眼分不出 -->
+    <color name="w_mood_tian">#D08A5C</color>
+    <color name="w_mood_xiang">#C9A227</color>
+    <color name="w_mood_lei">#7E93B4</color>
+    <color name="w_mood_sang">#8B7E9B</color>
+    <color name="w_mood_qi">#B02F49</color>
+
+    <!-- 语义色：仅用于图标 / 头像，不用于正文 -->
+    <color name="w_her_ink">#7C3F39</color>
+    <color name="w_him_ink">#35578C</color>
+    <color name="w_him">#35578C</color>
+    <color name="w_gold_ink">#8A5E19</color>
+    <color name="w_q_ink">#4A3D59</color>
+
+    <!-- 兼容旧引用（背景/描边用，不是文字色） -->
+    <color name="w_her_soft">#F7E4E1</color>
+    <color name="w_him_soft">#F1E6D6</color>
+    <color name="w_gold_soft">#F1E6D6</color>
+    <color name="w_q_soft">#F1E6D6</color>
+    <color name="w_tag_bg">#F1E6D6</color>
+    <color name="w_line">#EFE9E2</color>
 </resources>

@@ -26,6 +26,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -50,7 +51,11 @@ import com.xiaoman.memo.ui.screens.LettersScreen
 import com.xiaoman.memo.ui.screens.LibraryScreen
 import com.xiaoman.memo.ui.screens.LetterEditScreen
 import com.xiaoman.memo.ui.screens.ListsScreen
+import com.xiaoman.memo.ui.screens.MailEditScreen
+import com.xiaoman.memo.ui.screens.MailReadScreen
+import com.xiaoman.memo.ui.screens.MailScreen
 import com.xiaoman.memo.ui.screens.MemosScreen
+import com.xiaoman.memo.ui.screens.MoodHistoryScreen
 import com.xiaoman.memo.ui.screens.PhotosScreen
 import com.xiaoman.memo.ui.screens.PlansScreen
 import com.xiaoman.memo.ui.screens.PoolBrowseScreen
@@ -64,8 +69,10 @@ import com.xiaoman.memo.ui.theme.Xm
 import kotlinx.coroutines.launch
 
 object R {
-    const val TABS = "tabs"
-    const val EDITOR = "editor?memoId={memoId}"
+    /* tab 由深链（桌面小工具）定位：0 此刻 / 1 说好的 / 2 点滴 / 3 往后 / 4 我们俩 */
+    const val TABS = "tabs?tab={tab}"
+    /* draft 由小工具「快速记一笔」带入的草稿文本（可选） */
+    const val EDITOR = "editor?memoId={memoId}&draft={draft}"
     const val DETAIL = "detail/{memoId}"
     const val QUARRELS = "quarrels"
     const val QUARREL_EDIT = "quarrelEdit?quarrelId={quarrelId}&heat={heat}"
@@ -74,10 +81,15 @@ object R {
     const val INTERACT = "interact"
     const val FLIP = "flip"
     const val LIBRARY = "library"
+    const val MOOD = "mood"
     const val CYCLE = "cycle"
     const val CYCLE_EDIT = "cycleEdit?cycleId={cycleId}&daily={daily}"
     const val LETTERS = "letters"
     const val LETTER_EDIT = "letterEdit?letterId={letterId}"
+    /* 云笺：只增不删，故没有删除路由 */
+    const val MAILS = "mails"
+    const val MAIL_READ = "mailRead?mailId={mailId}"
+    const val MAIL_EDIT = "mailEdit"
     const val RULES = "rules"
     const val RULE_EDIT = "ruleEdit?ruleId={ruleId}"
     const val PHOTOS = "photos"
@@ -146,7 +158,15 @@ fun XiaomanNavHost(nav: NavHostController, vm: com.xiaoman.memo.data.AppViewMode
                 .padding(pad)
                 .imePadding(),
         ) {
-            composable(R.TABS) {
+            composable(
+                R.TABS,
+                deepLinks = listOf(navDeepLink { uriPattern = "xiaoman://tabs?tab={tab}" }),
+            ) { e ->
+                /* 深链带 tab 时直接翻到对应主页（小工具的「去往后」等入口用） */
+                val tab = e.arguments?.getString("tab")?.toIntOrNull() ?: 0
+                LaunchedEffect(tab) {
+                    if (tab in 1..(TABS.size - 1)) pagerState.scrollToPage(tab)
+                }
                 HorizontalPager(
                     state = pagerState,
                     modifier = Modifier.fillMaxSize(),
@@ -164,9 +184,16 @@ fun XiaomanNavHost(nav: NavHostController, vm: com.xiaoman.memo.data.AppViewMode
 
             composable(
                 R.EDITOR,
-                deepLinks = listOf(navDeepLink { uriPattern = "xiaoman://editor" }),
+                deepLinks = listOf(
+                    navDeepLink { uriPattern = "xiaoman://editor" },
+                    navDeepLink { uriPattern = "xiaoman://editor?draft={draft}" },
+                ),
             ) { e ->
-                EditorScreen(nav, vm, e.arguments?.getString("memoId")?.toLongOrNull() ?: 0L)
+                EditorScreen(
+                    nav, vm,
+                    memoId = e.arguments?.getString("memoId")?.toLongOrNull() ?: 0L,
+                    draft = e.arguments?.getString("draft").orEmpty(),
+                )
             }
             composable(R.DETAIL) { e -> DetailScreen(nav, vm, e.arguments?.getString("memoId")?.toLongOrNull() ?: 0L) }
             composable(R.QUARRELS) { QuarrelsScreen(nav, vm) }
@@ -181,8 +208,15 @@ fun XiaomanNavHost(nav: NavHostController, vm: com.xiaoman.memo.data.AppViewMode
             }
             composable(R.INTERACT) { InteractScreen(nav, vm) }
             composable(R.FLIP) { FlipBrowseScreen(nav, vm) }
-            composable(R.POOL_LIB) { PoolBrowseScreen(nav, vm) }
-            composable(R.LIBRARY) { LibraryScreen(nav, vm) }
+            composable(
+                R.POOL_LIB,
+                deepLinks = listOf(navDeepLink { uriPattern = "xiaoman://pool" }),
+            ) { PoolBrowseScreen(nav, vm) }
+            composable(
+                R.LIBRARY,
+                deepLinks = listOf(navDeepLink { uriPattern = "xiaoman://library" }),
+            ) { LibraryScreen(nav, vm) }
+            composable(R.MOOD) { MoodHistoryScreen(nav, vm) }
             composable(R.CYCLE) { CycleScreen(nav, vm) }
             composable(R.CYCLE_EDIT) { e ->
                 CycleEditScreen(
@@ -191,6 +225,11 @@ fun XiaomanNavHost(nav: NavHostController, vm: com.xiaoman.memo.data.AppViewMode
                     dailyArg = e.arguments?.getString("daily") == "1",
                 )
             }
+            composable(R.MAILS) { MailScreen(nav, vm) }
+            composable(R.MAIL_READ) { e ->
+                MailReadScreen(nav, vm, e.arguments?.getString("mailId")?.toLongOrNull() ?: 0L)
+            }
+            composable(R.MAIL_EDIT) { MailEditScreen(nav, vm) }
             composable(R.LETTERS) { LettersScreen(nav, vm) }
             composable(
                 R.LETTER_EDIT,

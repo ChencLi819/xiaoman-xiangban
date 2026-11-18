@@ -179,6 +179,23 @@ data class CustomTagEntity(
     @ColumnInfo(defaultValue = "0") val deleted: Boolean = false,
 )
 
+/* v7「心晴」：一人一天一条心情。
+   date + author 定位当天记录（不加唯一索引：墓碑行不能让后来的新记录插不进去，
+   去重由应用层「先查当天该人、有则改无则插」保证）。
+   mood = tian|xiang|lei|sang|qi（对应 甜/想/累/丧/气）。
+   换心情 = 更新同一行并刷新 updatedAt，同步按 LWW 自然传播。 */
+@Entity(tableName = "moods", indices = [Index(value = ["date", "author"])])
+data class MoodEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val date: String,                      // yyyy-MM-dd
+    val author: String,                    // her | him
+    val mood: String,                      // tian|xiang|lei|sang|qi
+    val createdAt: Long,
+    @ColumnInfo(defaultValue = "") val uuid: String = java.util.UUID.randomUUID().toString(),
+    @ColumnInfo(defaultValue = "0") val updatedAt: Long = 0,
+    @ColumnInfo(defaultValue = "0") val deleted: Boolean = false,
+)
+
 /* 互动/翻篇池的内容覆盖：内置 520 条为静态种子，用户的增删改记在此表。
    kind = act|pool；op = add|edit|del；origin = 被改/删的内置原文（add 行为空）。
    直接删除本表行也走墓碑（v4 起），防止被对端同步回来。 */
@@ -193,6 +210,25 @@ data class PoolOverrideEntity(
     val meet: Boolean = false,
     val lv: Int = 0,
     val createdAt: Long,
+    @ColumnInfo(defaultValue = "") val uuid: String = java.util.UUID.randomUUID().toString(),
+    @ColumnInfo(defaultValue = "0") val updatedAt: Long = 0,
+    @ColumnInfo(defaultValue = "0") val deleted: Boolean = false,
+)
+
+/* v8「云笺」：写一封寄给对方，收件箱里躺着，不能删。
+   author = 发信人（her | him）；收件人永远是另一个人，所以不存 to。
+   sentAt = 寄出时刻（毫秒），列表排序与「什么时候发的」都靠它；
+   readAt = 第一次打开的时刻（0 = 还没拆开），只影响未读竖条，不影响排序。
+   deleted 列保留是为了同步协议统一（合并、快照都按这张表的列走），
+   但 App 内没有任何入口会把它置真 —— 云笺不可删除。 */
+@Entity(tableName = "mails", indices = [Index(value = ["sentAt"])])
+data class MailEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val author: String,                    // her | him
+    val title: String,
+    val body: String,
+    val sentAt: Long,
+    val readAt: Long = 0,
     @ColumnInfo(defaultValue = "") val uuid: String = java.util.UUID.randomUUID().toString(),
     @ColumnInfo(defaultValue = "0") val updatedAt: Long = 0,
     @ColumnInfo(defaultValue = "0") val deleted: Boolean = false,

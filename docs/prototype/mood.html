@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>小满 · 心晴 — 今日心情原型</title>
+<style>
+  :root{
+    --bg:#FBF7F4; --card:#FFFFFF;
+    --line:#F0EAE5; --line2:#E5DCD8;
+    --ink:#2C2733; --ink2:#8A8494; --ink3:#B4AEB9;
+    --accent:#E86A7C; --accent-soft:#FDE7E4; --accent-deep:#C9526A;
+    --her:#EE7C77; --her-soft:#FDEDEA; --her-ink:#B06863;
+    --him:#6E93C8; --him-soft:#EBF2FB; --him-ink:#5A80B8;
+    --gold-soft:#FFF6E8; --gold-ink:#B98A38;
+    --q-soft:#F3EFF7; --q-ink:#7A6B85;
+    --tag-bg:#F5F0EE;
+    --shadow:0 8px 24px rgba(44,39,51,.08);
+    --ph-p:#E86A7C; --ph-f:#E9A23B; --ph-o:#4FA383; --ph-l:#8A6BB8;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--bg);
+    font-family:"Noto Sans SC","Source Han Sans CN","HarmonyOS Sans SC","MiSans","Microsoft YaHei",sans-serif;
+    color:var(--ink); padding:48px 40px 80px;
+  }
+  .page-head h1{font-size:42px;font-weight:700;}
+  .page-head p{font-size:17px;color:var(--ink2);margin-top:10px;max-width:860px;line-height:26px;}
+  .sec-label{font-size:20px;font-weight:500;color:var(--ink2);margin:56px 0 8px;}
+  .sec-sub{font-size:14px;color:var(--ink3);margin-bottom:20px;max-width:900px;line-height:22px;}
+  .row{display:flex;gap:30px;flex-wrap:wrap;align-items:flex-start;}
+  .card{background:var(--card);border:2px solid var(--line);border-radius:24px;box-shadow:var(--shadow);padding:24px;}
+  b.r{color:var(--accent-deep);}
+
+  /* ===== 手机框 ===== */
+  .phone{
+    width:400px;border-radius:40px;position:relative;overflow:hidden;
+    background:var(--bg);border:10px solid #2C2733;box-shadow:0 16px 48px rgba(44,39,51,.14);flex-shrink:0;
+  }
+  .phone .status{height:34px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;font-size:12px;font-weight:600;color:var(--ink2);background:var(--bg);}
+  .phone .pbody{padding:14px 16px 22px;display:flex;flex-direction:column;gap:12px;background:var(--bg);}
+  .p-title{font-size:24px;font-weight:700;}
+  .p-date{font-size:11px;color:var(--ink2);margin-top:2px;}
+  .p-head{display:flex;align-items:flex-start;}
+  .p-head .grow{flex:1;}
+  .p-avs{display:flex;align-items:center;gap:5px;}
+  .p-av{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;}
+  .p-av.her{background:var(--her-soft);color:var(--her-ink);}
+  .p-av.him{background:var(--him-soft);color:var(--him-ink);}
+  .p-heart{width:14px;height:14px;}
+  .inputbar{display:flex;align-items:center;gap:8px;border:1.5px solid var(--line);background:var(--card);border-radius:22px;padding:9px 9px 9px 14px;}
+  .inputbar .ph{flex:1;font-size:13px;color:var(--ink3);}
+  .inputbar .btn{width:52px;height:30px;border-radius:11px;background:linear-gradient(90deg,var(--accent),var(--accent-deep));color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;}
+
+  /* ===== 此刻 · 心情卡（纯文字选项） ===== */
+  .moodcard{border-radius:20px;padding:14px;border:1.5px solid var(--line);}
+  .moodcard .mhead{display:flex;align-items:center;gap:8px;}
+  .moodcard .mtitle{font-size:14px;font-weight:600;}
+  .moodcard .msub{font-size:11px;color:var(--ink2);margin-top:1px;}
+  .moodcard .go{margin-left:auto;font-size:11px;color:var(--ink3);display:flex;align-items:center;gap:2px;}
+  .mchips{display:flex;gap:8px;margin-top:12px;}
+  .mc{
+    flex:1;text-align:center;border-radius:12px;padding:9px 0;font-size:14px;font-weight:600;
+    background:#fff;border:1.5px solid var(--line2);letter-spacing:.5px;
+  }
+  .mc.sel{color:#fff !important;border-color:transparent;}
+  .moodyesterday{display:flex;align-items:center;gap:6px;margin-top:11px;font-size:11px;color:var(--ink2);}
+
+  /* 已打卡的折叠态 */
+  .mooddone{display:flex;align-items:center;gap:11px;border-radius:20px;padding:11px 13px;border:1.5px solid var(--line);}
+  .mooddone .md-av{width:46px;height:46px;flex-shrink:0;}
+  .mooddone .md-t1{font-size:14px;font-weight:700;}
+  .mooddone .md-t2{font-size:11px;color:var(--ink2);margin-top:2px;}
+  .mooddone .md-go{margin-left:auto;font-size:11px;color:var(--ink3);}
+  .mooddone .md-edit{font-size:10px;color:var(--ink3);margin-top:2px;}
+
+  /* ===== 选完之后的大图页 ===== */
+  .bigpage{display:flex;flex-direction:column;align-items:center;padding:2px 0 4px;}
+  .bp-head{width:100%;display:flex;align-items:center;font-size:12px;color:var(--ink2);}
+  .bp-head .back{font-size:20px;line-height:1;color:var(--ink);width:26px;}
+  .bp-head .d{flex:1;text-align:center;font-weight:500;}
+  .bp-stage{width:100%;margin-top:8px;border-radius:26px;padding:16px 0 4px;display:flex;justify-content:center;
+    background:radial-gradient(circle at 50% 42%, #fff 0%, rgba(255,255,255,0) 72%);}
+  .bp-img{width:238px;height:238px;display:block;}
+  .bp-title{font-size:22px;font-weight:700;margin-top:2px;}
+  .bp-sub{font-size:13px;color:var(--ink2);margin-top:6px;}
+  .bp-hint{font-size:11px;color:var(--ink3);margin-top:10px;display:flex;align-items:center;gap:5px;}
+  .bp-actions{display:flex;gap:10px;width:100%;margin-top:16px;}
+  .btn-ghost{flex:1;text-align:center;border:1.5px solid var(--line2);border-radius:16px;padding:12px 0;font-size:13px;color:var(--ink2);background:#fff;}
+  .btn-main{flex:1.2;text-align:center;border-radius:16px;padding:12px 0;font-size:13px;font-weight:600;color:#fff;
+    background:linear-gradient(90deg,var(--accent),var(--accent-deep));}
+
+  /* ===== 大图总览 ===== */
+  .gallery{display:flex;flex-wrap:wrap;gap:16px;max-width:1070px;}
+  .gcard{flex:0 0 196px;width:196px;border-radius:20px;padding:14px 12px 12px;text-align:center;border:1.5px solid var(--line);}
+  .gcard img{width:150px;height:150px;display:block;margin:0 auto;}
+  .gcard .gt{font-size:13px;font-weight:600;margin-top:6px;}
+  .gcard .gs{font-size:11px;color:var(--ink2);margin-top:3px;}
+
+  /* ===== 心晴 · 历史日期表 ===== */
+  .cal-card{background:var(--card);border:1.5px solid var(--line);border-radius:20px;padding:14px;}
+  .seg{display:flex;background:var(--tag-bg);border-radius:16px;padding:3px;width:max-content;}
+  .seg .s{padding:6px 18px;border-radius:13px;font-size:12px;color:var(--ink2);}
+  .seg .s.on{background:var(--card);color:var(--ink);font-weight:600;box-shadow:0 1px 4px rgba(44,39,51,.10);}
+  .cal-head{display:flex;align-items:center;margin-top:12px;}
+  .cal-head .ym{flex:1;text-align:center;font-size:15px;font-weight:600;}
+  .cal-head .arr{font-size:16px;color:var(--ink2);padding:2px 12px;}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-top:10px;}
+  .cal-grid .wd{text-align:center;font-size:10px;color:var(--ink3);padding:4px 0;}
+  .day{border-radius:10px;min-height:56px;display:flex;flex-direction:column;align-items:center;padding-top:3px;gap:0;}
+  .day .n{font-size:10px;color:var(--ink2);line-height:12px;}
+  .day img.f{width:27px;height:27px;display:block;margin-top:0;}
+  .day img.f2{width:16px;height:16px;display:block;margin-top:-2px;}
+  .day.today{background:var(--accent-soft);}
+  .day.empty{min-height:56px;}
+  .sum{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;}
+  .sum .chip{border-radius:14px;padding:4px 10px 4px 4px;font-size:11px;display:flex;align-items:center;gap:5px;}
+  .sum .chip img{width:18px;height:18px;}
+
+  /* ===== 我们俩入口 ===== */
+  .entry{display:flex;align-items:center;gap:12px;background:var(--card);border:1.5px solid var(--line);border-radius:20px;padding:12px 16px;}
+  .entry .e-ico{width:44px;height:44px;border-radius:14px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;overflow:hidden;}
+  .entry .e-ico img{width:40px;height:40px;}
+  .entry .e-t1{font-size:14px;font-weight:600;}
+  .entry .e-t2{font-size:11px;color:var(--ink2);margin-top:2px;}
+  .entry .chev{margin-left:auto;color:var(--ink3);font-size:15px;}
+  .entry.dim{opacity:.45;filter:grayscale(.4);}
+
+  /* ===== 周期页 ===== */
+  .pcard{background:var(--card);border:1.5px solid var(--line);border-radius:20px;padding:2px 14px;}
+  .prow{display:flex;gap:10px;padding:11px 0;align-items:flex-start;}
+  .prow + .prow{border-top:1px solid var(--line);}
+  .prow .sq{width:9px;height:9px;border-radius:50%;margin-top:5px;flex-shrink:0;}
+  .prow .t1{font-size:14px;font-weight:600;display:flex;align-items:center;gap:7px;}
+  .prow .t1 .days{margin-left:auto;font-size:10.5px;color:var(--ink3);font-weight:400;}
+  .prow .t2{font-size:10.5px;color:var(--ink3);margin-top:3px;}
+  .prow .t3{font-size:10.5px;line-height:16px;color:var(--ink2);margin-top:4px;}
+  .now{background:var(--accent);color:#fff;font-size:9px;border-radius:8px;padding:2px 6px;font-weight:600;}
+  .pc-foot{font-size:10px;color:var(--ink3);padding:9px 0;}
+  .sec-title{font-size:14px;font-weight:600;color:var(--ink);display:flex;align-items:baseline;gap:6px;}
+  .sec-title .sub{font-size:10.5px;color:var(--ink3);font-weight:400;}
+  .legend{display:flex;gap:12px;font-size:10px;color:var(--ink2);margin-top:10px;flex-wrap:wrap;}
+  .legend .li{display:flex;align-items:center;gap:4px;}
+  .legend .sw{width:10px;height:10px;border-radius:3px;}
+  .note{font-size:12px;color:var(--ink2);line-height:20px;margin-top:12px;max-width:900px;}
+  .tagline{display:inline-block;font-size:11px;color:var(--accent-deep);background:var(--accent-soft);border-radius:8px;padding:2px 8px;margin-bottom:8px;}
+</style>
+</head>
+<body>
+
+<header class="page-head">
+  <h1>小满 · 心晴 — 今日心情原型</h1>
+  <p>心情卡落到「此刻」顶端（随手记一件上方）：<b class="r">先给纯文字五档，选完再进动漫大图</b>；形象改用绘制插画（她 = Q 版长发温柔，他 = 短发憨傻）· 历史以日期表查看 · 「我们俩」加入口「心晴」 · 周期页只交换「日期表」与「四个阶段」的位置。
+  <br><b class="r">本页仅原型，未经确认不开发。</b></p>
+</header>
+
+<!-- ============ ① 此刻 · 心情卡 ============ -->
+<div class="sec-label">① 此刻页 · 今日心情卡（插在页头与「随手记一件」之间）</div>
+<div class="sec-sub">卡片里只放 <b>纯文字五档</b>（甜 / 想 / 累 / 丧 / 气），不出现插画。点选某一档 → 全屏进入 <b>动漫大图页</b>；确认后回到此刻页，卡片收成一行「今天 · 甜」+ 小图，点「看大图」可再打开、点开可换。</div>
+<div class="row">
+
+  <!-- A：未打卡 -->
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>●●●</span></div>
+    <div class="pbody">
+      <div class="p-head">
+        <div class="grow"><div class="p-title">此刻</div><div class="p-date">10月24日 周六 · 2 件待办</div></div>
+        <div class="p-avs">
+          <div class="p-av her">她</div>
+          <svg class="p-heart" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#E86A7C"/></svg>
+          <div class="p-av him">他</div>
+        </div>
+      </div>
+
+      <div class="moodcard" style="background:var(--her-soft);border-color:#F3DCD8;">
+        <div class="mhead">
+          <div><div class="mtitle" style="color:var(--her-ink);">今天的心情</div><div class="msub">选一个，替你说出来</div></div>
+          <div class="go">心晴 ›</div>
+        </div>
+        <div class="mchips" id="chips-a"></div>
+        <div class="moodyesterday">
+          <svg width="12" height="12" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#B06863"/></svg>
+          昨天 · 甜 ｜ TA 今天还没打卡
+        </div>
+      </div>
+
+      <div class="inputbar"><div class="ph">随手记一件…（回车即存）</div><div class="btn">记下</div></div>
+      <div class="card" style="padding:14px;opacity:.4;"><div style="font-size:12px;color:var(--ink2);">（下方：要一起做的 · 点滴 · 往后，不变）</div></div>
+    </div>
+  </div>
+
+  <!-- B：选完 → 大图页 -->
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>●●●</span></div>
+    <div class="pbody">
+      <div class="bigpage">
+        <div class="bp-head"><span class="back">‹</span><span class="d">10月24日 周六</span><span style="width:26px;"></span></div>
+        <div class="bp-stage"><img class="bp-img" src="assets/mood/her-tian.png" alt="甜"></div>
+        <div class="bp-title">今天 · 甜</div>
+        <div class="bp-sub">甜度超标，想贴贴</div>
+        <div class="bp-hint">
+          <svg width="11" height="11" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#B4AEB9"/></svg>
+          已记进今天的心情，TA 也看得到
+        </div>
+        <div class="bp-actions"><div class="btn-ghost">换一个</div><div class="btn-main">就这样</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- C：已打卡折叠态 -->
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>●●●</span></div>
+    <div class="pbody">
+      <div class="p-head">
+        <div class="grow"><div class="p-title">此刻</div><div class="p-date">10月24日 周六 · 2 件待办</div></div>
+        <div class="p-avs">
+          <div class="p-av her">她</div>
+          <svg class="p-heart" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#E86A7C"/></svg>
+          <div class="p-av him">他</div>
+        </div>
+      </div>
+
+      <div class="mooddone" style="background:var(--her-soft);border-color:#F3DCD8;">
+        <img class="md-av" src="assets/mood/her-tian.png" alt="甜">
+        <div>
+          <div class="md-t1" style="color:var(--her-ink);">今天 · 甜</div>
+          <div class="md-t2">甜度超标，想贴贴</div>
+          <div class="md-edit">点一下可换</div>
+        </div>
+        <div class="md-go">看大图 ›</div>
+      </div>
+
+      <div class="inputbar"><div class="ph">随手记一件…（回车即存）</div><div class="btn">记下</div></div>
+      <div class="card" style="padding:14px;opacity:.4;"><div style="font-size:12px;color:var(--ink2);">（下方：要一起做的 · 点滴 · 往后，不变）</div></div>
+    </div>
+  </div>
+</div>
+
+<p class="note">说明：五档文字按钮用「白底 + 细边」，字色跟随该档颜色；点击后不做原地弹层，直接进大图页（一屏一张插画，先看图再确认，符合「选完才看到图」的顺序）。卡片底、TA 一侧配色仍按身份区分（她珊瑚 / 他雾蓝）。</p>
+
+<!-- ============ ② 插画总览 ============ -->
+<div class="sec-label">② 心情插画 · 她 / 他 × 甜想累丧气（各 5 张）</div>
+<div class="sec-sub">她：Q 版长发、温柔、珊瑚针织衫（无丸子头 / 无帽子）；他：短乱发 + 一撮呆毛、豆豆眼、憨笑（雾蓝毛衣）。同一套图在心情卡（40–46px）、日期表（20px）里复用，抠掉背景透明存放。</div>
+<div class="gallery" id="gallery"></div>
+
+<!-- ============ ③ 心晴 · 历史详情 ============ -->
+<div class="sec-label">③ 心晴 · 历史详情（日期表）</div>
+<div class="sec-sub">已定名 <b class="r">「心晴」</b>（心情 × 晴，接「雨过」的天气意象；副标题「晴天雨天，都是心晴」）。入口在「我们俩」。默认看自己，可切「TA」；一屏一月，格子里放当天心情插画；两人模式下上下两张。</div>
+<div class="row">
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>●●●</span></div>
+    <div class="pbody">
+      <div class="p-head"><div class="grow"><div class="p-title">心晴</div><div class="p-date">晴天雨天，都是心晴</div></div></div>
+      <div class="seg"><div class="s on">我（她）</div><div class="s">TA（他）</div><div class="s">两人</div></div>
+      <div class="cal-card">
+        <div class="cal-head"><div class="arr">‹</div><div class="ym">2026年10月</div><div class="arr">›</div></div>
+        <div class="cal-grid" id="cal-grid"></div>
+        <div class="sum" id="cal-sum"></div>
+      </div>
+      <div class="card" style="padding:14px;">
+        <div style="font-size:12px;font-weight:600;margin-bottom:8px;">最近换过的心情</div>
+        <div style="font-size:11px;color:var(--ink2);line-height:20px;">10月23日 · 丧 → 甜（傍晚改的）<br>10月21日 · 想<br>10月20日 · 累</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>●●●</span></div>
+    <div class="pbody">
+      <div class="p-head"><div class="grow"><div class="p-title">心晴</div><div class="p-date">两人同看 · 一格里上下两张</div></div></div>
+      <div class="seg"><div class="s">我（她）</div><div class="s">TA（他）</div><div class="s on">两人</div></div>
+      <div class="cal-card">
+        <div class="cal-head"><div class="arr">‹</div><div class="ym">2026年10月</div><div class="arr">›</div></div>
+        <div class="cal-grid" id="cal-grid2"></div>
+        <div class="legend">
+          <span class="li"><span class="sw" style="background:var(--her);"></span>上 = 她</span>
+          <span class="li"><span class="sw" style="background:var(--him);"></span>下 = 他</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ④ 我们俩入口 ============ -->
+<div class="sec-label">④ 我们俩 · 新增入口「心晴」</div>
+<div class="sec-sub">插在「周期」之前，其余行不变、置灰示意。图标用她的「甜」插画。</div>
+<div class="row">
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>●●●</span></div>
+    <div class="pbody">
+      <div class="p-title" style="font-size:20px;margin-bottom:2px;">我们俩</div>
+      <div class="entry dim"><div class="e-ico" style="background:var(--gold-soft);">💌</div><div><div class="e-t1">情书</div><div class="e-t2">写给她 / 他的一封信</div></div><div class="chev">›</div></div>
+      <div class="entry dim"><div class="e-ico" style="background:var(--him-soft);">📷</div><div><div class="e-t1">相册</div><div class="e-t2">共同的瞬间</div></div><div class="chev">›</div></div>
+      <div class="entry"><div class="e-ico"><img src="assets/mood/her-tian.png" alt="心晴"></div><div><div class="e-t1">心晴</div><div class="e-t2">晴天雨天，都是心晴</div></div><div class="chev">›</div></div>
+      <div class="entry dim"><div class="e-ico" style="background:var(--her-soft);">🌸</div><div><div class="e-t1">周期</div><div class="e-t2">她的身体日历</div></div><div class="chev">›</div></div>
+      <div class="entry dim"><div class="e-ico" style="background:var(--q-soft);">📏</div><div><div class="e-t1">分寸</div><div class="e-t2">彼此的喜欢与底线</div></div><div class="chev">›</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ⑤ 周期页 · 只换位置 ============ -->
+<div class="sec-label">⑤ 周期页 · 日期表与「四个阶段」换位置</div>
+<div class="sec-sub">只做一件事：原来「本周期四个阶段」在上、日期表在下，改成 <b class="r">日期表在上、四阶段卡在下</b>。卡片内容、四行阶段、颜色、文案一个字都不动，也不拆分黄体期。</div>
+<div class="row">
+  <div class="phone">
+    <div class="status"><span>9:41</span><span>●●●</span></div>
+    <div class="pbody">
+      <div class="p-head"><div class="grow"><div class="p-title">周期</div><div class="p-date">她的身体日历</div></div></div>
+
+      <!-- 日期表（上移） -->
+      <div class="cal-card">
+        <div class="cal-head"><div class="arr">‹</div><div class="ym">2026年10月</div><div class="arr">›</div></div>
+        <div class="cal-grid" id="cal-grid3"></div>
+        <div class="legend">
+          <span class="li"><span class="sw" style="background:#F7C9CE;"></span>经期</span>
+          <span class="li"><span class="sw" style="background:#CFE2CF;"></span>卵泡期</span>
+          <span class="li"><span class="sw" style="background:#D8DCF1;"></span>排卵期</span>
+          <span class="li"><span class="sw" style="background:#FBE9C7;"></span>黄体期</span>
+          <span class="li"><span class="sw" style="background:transparent;border:1.5px dashed var(--ink3);"></span>预测经期</span>
+        </div>
+      </div>
+
+      <!-- 四阶段卡（下移，内容不变） -->
+      <div class="sec-title">本周期四个阶段 <span class="sub">按平均周期估算</span></div>
+      <div class="pcard">
+        <div class="prow">
+          <div class="sq" style="background:#E86A7C;"></div>
+          <div style="flex:1;">
+            <div class="t1">经期 <span class="days">约 7 天</span></div>
+            <div class="t2">9月30日 – 10月6日</div>
+            <div class="t3">子宫内膜脱落并随经血排出，多数人持续 3-7 天；下腹坠胀、腰酸与疲乏是常见表现，注意保暖和休息</div>
+          </div>
+        </div>
+        <div class="prow">
+          <div class="sq" style="background:#7FB08A;"></div>
+          <div style="flex:1;">
+            <div class="t1">卵泡期 <span class="days">约 5 天</span></div>
+            <div class="t2">10月7日 – 10月11日</div>
+            <div class="t3">雌激素水平逐步回升，子宫内膜重新增厚，精力与状态一般会一天天恢复</div>
+          </div>
+        </div>
+        <div class="prow">
+          <div class="sq" style="background:#8A6BB8;"></div>
+          <div style="flex:1;">
+            <div class="t1">排卵期 <span class="days">约 5 天</span></div>
+            <div class="t2">10月12日 – 10月16日</div>
+            <div class="t3">成熟卵子排出，通常在下次月经前 14 天左右；部分人会有一侧下腹轻微不适，分泌物变得清亮透明，都属正常现象</div>
+          </div>
+        </div>
+        <div class="prow">
+          <div class="sq" style="background:#D9A63C;"></div>
+          <div style="flex:1;">
+            <div class="t1">黄体期 <span class="now">现在</span> <span class="days">约 11 天</span></div>
+            <div class="t2">10月17日 – 10月27日</div>
+            <div class="t3">孕激素升高，部分人会出现乳房胀痛、情绪波动、嗜睡或食欲变化等经前表现（PMS），需要多些耐心</div>
+          </div>
+        </div>
+        <div class="pc-foot">阶段区间按平均周期与末次经期推算，每个人的节奏略有不同，仅作了解身体的参考</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="note">唯一改动就是这两块上下互换：日期表顶到标题下方，「本周期四个阶段」整卡连同标题一起挪到日期表下面。其余（配色、图例、行序、文案、脚注）保持原样。</p>
+
+<!-- ============ 色板 ============ -->
+<div class="sec-label">色彩令牌（与 App / 小组件一致）</div>
+<div class="note" style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;font-size:13px;">
+  <span>🟪 她 #EE7C77</span><span>🟦 他 #6E93C8</span><span>🟥 甜 #E86A7C</span><span>🟨 想 #B98A38</span><span>🟦 累 #5A80B8</span><span>🟪 丧 #7A6B85</span><span>🟥 气 #C9526A</span>
+</div>
+
+<script>
+const MOODS = {
+  tian:  { name:"甜", bg:"#FDE7E4", ink:"#C9526A", sub:"甜度超标，想贴贴" },
+  xiang: { name:"想", bg:"#FFF6E8", ink:"#B98A38", sub:"满脑子都是你" },
+  lei:   { name:"累", bg:"#EBF2FB", ink:"#5A80B8", sub:"电量不足，求充电" },
+  sang:  { name:"丧", bg:"#F3EFF7", ink:"#7A6B85", sub:"有点提不起劲" },
+  qi:    { name:"气", bg:"#FDE7E4", ink:"#C9526A", sub:"快来哄，速来" },
+};
+const KEYS = Object.keys(MOODS);
+const img = (g,k) => `assets/mood/${g}-${k}.png`;
+
+/* ① 纯文字五档：A 卡未选（悬停感放在「甜」上作示例） */
+document.getElementById("chips-a").innerHTML = KEYS.map(k =>
+  `<div class="mc" style="color:${MOODS[k].ink};">${MOODS[k].name}</div>`).join("");
+
+/* ② 插画总览 */
+document.getElementById("gallery").innerHTML = ["her","him"].flatMap(g =>
+  KEYS.map(k => `<div class="gcard" style="background:${MOODS[k].bg};border-color:rgba(0,0,0,.04);">
+    <img src="${img(g,k)}" alt="${MOODS[k].name}">
+    <div class="gt" style="color:${MOODS[k].ink};">${MOODS[k].name} · ${g==="her"?"她":"他"}</div>
+    <div class="gs" style="color:${MOODS[k].ink};opacity:.7;">${MOODS[k].sub}</div>
+  </div>`).join(""));
+
+/* ③ 心晴日历 */
+function buildCal(id, mode, sumId){
+  const grid = document.getElementById(id);
+  const wd = ["日","一","二","三","四","五","六"];
+  const first = new Date(2026, 9, 1).getDay();
+  const demo = { her:{24:"tian",23:"sang",21:"xiang",20:"lei",18:"tian",15:"tian",12:"qi",8:"tian",5:"xiang",2:"tian"},
+                 him:{24:"lei",23:"tian",21:"tian",19:"sang",16:"lei",13:"xiang",10:"tian",6:"tian",3:"qi",1:"tian"} };
+  let html = wd.map(w=>`<div class="wd">${w}</div>`).join("");
+  for (let i=0;i<first;i++) html += `<div class="day empty"></div>`;
+  for (let d=1; d<=31; d++){
+    let faces = "";
+    if (mode === "both") {
+      faces = (demo.her[d]?`<img class="f2" src="${img("her",demo.her[d])}">`:"")
+            + (demo.him[d]?`<img class="f2" src="${img("him",demo.him[d])}">`:"");
+    } else if (demo[mode][d]) {
+      faces = `<img class="f" src="${img(mode,demo[mode][d])}">`;
+    }
+    html += `<div class="day ${d===24?"today":""}"><div class="n">${d}</div>${faces}</div>`;
+  }
+  grid.innerHTML = html;
+  if (sumId){
+    const src = demo[mode] || {};
+    const count = k => Object.values(src).filter(x=>x===k).length;
+    document.getElementById(sumId).innerHTML = KEYS.filter(k=>count(k)>0).map(k =>
+      `<div class="chip" style="background:${MOODS[k].bg};color:${MOODS[k].ink};"><img src="${img(mode,k)}">${MOODS[k].name} × ${count(k)}</div>`).join("");
+  }
+}
+buildCal("cal-grid","her","cal-sum");
+buildCal("cal-grid2","both",null);
+
+/* ⑤ 周期日历：按截图的色块分布 */
+(function(){
+  const g = document.getElementById("cal-grid3");
+  const ph = d =>
+    (d>=1&&d<=6) ? "#F7C9CE" :
+    (d>=7&&d<=11) ? "#CFE2CF" :
+    (d>=12&&d<=16) ? "#D8DCF1" :
+    (d>=17&&d<=27) ? "#FBE9C7" : null;
+  let html = ["日","一","二","三","四","五","六"].map(w=>`<div class="wd">${w}</div>`).join("");
+  const first = new Date(2026, 9, 1).getDay();
+  for (let i=0;i<first;i++) html += `<div class="day empty"></div>`;
+  for (let d=1; d<=31; d++){
+    const c = ph(d);
+    const today = d===24;
+    html += `<div class="day" style="${c?`background:${c};`:''}${today?'box-shadow:inset 0 0 0 1.5px var(--accent);':''}">
+      <div class="n" style="color:${d>27?'#B4AEB9':'#3A3440'};font-weight:${today?700:400};">${d}</div></div>`;
+  }
+  g.innerHTML = html;
+})();
+</script>
+</body>
+</html>

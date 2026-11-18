@@ -34,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,19 +49,24 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.xiaoman.memo.data.AppViewModel
+import com.xiaoman.memo.data.DraftKey
 import com.xiaoman.memo.data.LetterEntity
+import com.xiaoman.memo.ui.components.AutoDraft
 import com.xiaoman.memo.ui.components.EmptyView
 import com.xiaoman.memo.ui.components.MonthBar
 import com.xiaoman.memo.ui.components.Seg
+import com.xiaoman.memo.ui.components.StrListSaver
 import com.xiaoman.memo.ui.components.WhoDot
 import com.xiaoman.memo.ui.components.XmCard
 import com.xiaoman.memo.ui.components.XmChip
+import com.xiaoman.memo.ui.components.rememberDraft
 import com.xiaoman.memo.ui.nav.R
 import com.xiaoman.memo.ui.theme.T
 import com.xiaoman.memo.ui.theme.Xm
 import com.xiaoman.memo.util.Dates
 import com.xiaoman.memo.util.ImageStore
 import kotlinx.coroutines.flow.map
+import org.json.JSONObject
 
 /* ── 情书列表 ── */
 @Composable
@@ -169,32 +175,69 @@ fun LetterEditScreen(nav: NavHostController, vm: AppViewModel, letterId: Long) {
     val ctx = LocalContext.current
     val ui by vm.ui.collectAsState()
 
-    var title by remember { mutableStateOf("") }
-    var body by remember { mutableStateOf("") }
-    var authorIdx by remember { mutableIntStateOf(0) }
-    var images by remember { mutableStateOf(listOf<String>()) }
-    var loaded by remember { mutableStateOf(letterId == 0L) }
+    /* 表单全部 rememberSaveable：写到一半改字号 / 分屏重建也不丢 */
+    var title by rememberSaveable { mutableStateOf("") }
+    var body by rememberSaveable { mutableStateOf("") }
+    var authorIdx by rememberSaveable { mutableIntStateOf(0) }
+    var images by rememberSaveable(stateSaver = StrListSaver) { mutableStateOf(listOf<String>()) }
+    var loaded by rememberSaveable { mutableStateOf(letterId == 0L) }
     var original by remember { mutableStateOf<LetterEntity?>(null) }
     var confirmDel by remember { mutableStateOf(false) }
-    var date by remember { mutableStateOf(Dates.fmt(Dates.today())) }
+    var date by rememberSaveable { mutableStateOf(Dates.fmt(Dates.today())) }
+    /* 载入时的内容指纹：编辑老信时判断「有没有改过」，打开不动就不留冗余草稿 */
+    var originFp by rememberSaveable { mutableStateOf("") }
+
+    fun fingerprint() = listOf(title, body, authorIdx.toString(), images.joinToString(","), date).joinToString("|")
 
     LaunchedEffect(letterId) {
         if (letterId != 0L) {
             vm.daoLetter(letterId)?.let { l ->
                 original = l
-                title = l.title; body = l.body
-                authorIdx = if (l.author == "him") 1 else 0
-                images = l.images.split(",").filter { it.isNotBlank() }
-                date = l.date
-                loaded = true
+                /* 只有首次进入才用库里的值铺表单；重建后保留用户正在改的内容 */
+                if (!loaded) {
+                    title = l.title; body = l.body
+                    authorIdx = if (l.author == "him") 1 else 0
+                    images = l.images.split(",").filter { it.isNotBlank() }
+                    date = l.date
+                    originFp = fingerprint()
+                    loaded = true
+                }
             }
         }
     }
 
-    val dirty = title.isNotBlank() || body.isNotBlank() || images.isNotEmpty()
-    BackHandler(enabled = dirty) {
-        /* 写信场景：返回即视为放弃草稿，与原型一致 */
+    /* 新建：有内容才算脏；编辑：与载入时比对 */
+    val dirty = if (letterId == 0L) {
+        title.isNotBlank() || body.isNotBlank() || images.isNotEmpty()
+    } else {
+        originFp.isNotBlank() && fingerprint() != originFp
     }
+    val draft = rememberDraft(vm, DraftKey.LETTER, letterId)
+    /* 只续写一次：重建后表单里已经是用户最新的字，别拿 1.5 秒前的草稿盖回去 */
+    var resumed by rememberSaveable { mutableStateOf(false) }
+
+    /* 进页面时续上没写完的信（只认同一封信的草稿，不会把新信盖到老信上） */
+    LaunchedEffect(letterId, loaded) {
+        if (resumed || !loaded) return@LaunchedEffect
+        resumed = true
+        draft.read()?.let { o ->
+            title = o.optString("title"); body = o.optString("body")
+            authorIdx = o.optInt("authorIdx", 0)
+            images = o.optString("images").split(",").filter { it.isNotBlank() }
+            date = o.optString("date", date)
+        }
+    }
+
+    AutoDraft(draft, dirty) {
+        if (!dirty) null
+        else JSONObject().apply {
+            put("title", title); put("body", body); put("authorIdx", authorIdx)
+            put("images", images.joinToString(",")); put("date", date)
+        }
+    }
+
+    /* 返回 = 存草稿走人：没写完的信留在本机，下次进来接着写；不替用户寄出。 */
+    BackHandler { nav.popBackStack() }
 
     val pick = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) {
@@ -209,7 +252,9 @@ fun LetterEditScreen(nav: NavHostController, vm: AppViewModel, letterId: Long) {
             title = title.trim().ifBlank { "无题" }, body = body, author = author,
             date = original?.date ?: date, images = images.joinToString(","),
         )
+        /* 先清草稿再退出：否则页面离开组合时的兜底写入会把刚保存的信又存回草稿 */
         vm.saveLetter(entity)
+        draft.finish()
         onDone()
     }
 
@@ -311,7 +356,7 @@ fun LetterEditScreen(nav: NavHostController, vm: AppViewModel, letterId: Long) {
             onDismissRequest = { confirmDel = false },
             title = { Text("删除这封情书？") },
             confirmButton = {
-                TextButton(onClick = { vm.deleteLetter(original!!.id); nav.popBackStack() }) { Text("删除", color = c.accentDeep) }
+                TextButton(onClick = { vm.deleteLetter(original!!.id); draft.finish(); nav.popBackStack() }) { Text("删除", color = c.accentDeep) }
             },
             dismissButton = { TextButton(onClick = { confirmDel = false }) { Text("取消") } },
         )

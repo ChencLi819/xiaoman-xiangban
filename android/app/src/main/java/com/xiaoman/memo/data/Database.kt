@@ -10,9 +10,10 @@ import androidx.room.RoomDatabase
         MemoEntity::class, ChecklistEntity::class, ChecklistItemEntity::class,
         PlanEntity::class, QuarrelEntity::class, RuleEntity::class,
         CycleEntity::class, LetterEntity::class, PhotoEntity::class, ActMarkEntity::class,
-        CustomTagEntity::class, PoolOverrideEntity::class,
+        CustomTagEntity::class, PoolOverrideEntity::class, MoodEntity::class,
+        MailEntity::class,
     ],
-    version = 6,
+    version = 8,
     exportSchema = false,
 )
 abstract class XiaomanDb : RoomDatabase() {
@@ -116,11 +117,47 @@ abstract class XiaomanDb : RoomDatabase() {
             }
         }
 
+        /* v6→v7：新增「心晴」心情表。纯建表 + 索引，不碰任何既有表，
+           老用户升级后心情为空（今天开始记）。
+           建表语句逐字对齐 Room 生成的期望 schema（含 AUTOINCREMENT），避免打开库时校验失败。 */
+        private val MIGRATION_6_7 = object : androidx.room.migration.Migration(6, 7) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `moods` (" +
+                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `date` TEXT NOT NULL, " +
+                        "`author` TEXT NOT NULL, `mood` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, " +
+                        "`uuid` TEXT NOT NULL DEFAULT '', `updatedAt` INTEGER NOT NULL DEFAULT 0, " +
+                        "`deleted` INTEGER NOT NULL DEFAULT 0)",
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_moods_date_author` ON `moods` (`date`, `author`)")
+            }
+        }
+
+        /* v7→v8：新增「云笺」邮件表。纯建表 + 索引，不碰任何既有表。
+           建表语句逐字对齐 Room 期望 schema（AUTOINCREMENT、列序、默认值），否则打开库校验失败。
+           注意 readAt 没有 @ColumnInfo(defaultValue)，所以这里也不能写 DEFAULT。 */
+        private val MIGRATION_7_8 = object : androidx.room.migration.Migration(7, 8) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `mails` (" +
+                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `author` TEXT NOT NULL, " +
+                        "`title` TEXT NOT NULL, `body` TEXT NOT NULL, `sentAt` INTEGER NOT NULL, " +
+                        "`readAt` INTEGER NOT NULL, `uuid` TEXT NOT NULL DEFAULT '', " +
+                        "`updatedAt` INTEGER NOT NULL DEFAULT 0, `deleted` INTEGER NOT NULL DEFAULT 0)",
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_mails_sentAt` ON `mails` (`sentAt`)")
+            }
+        }
+
         fun get(context: Context): XiaomanDb =
             inst ?: synchronized(this) {
                 inst ?: try {
                     Room.databaseBuilder(context.applicationContext, XiaomanDb::class.java, "xiaoman.db")
-                        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+                        .addMigrations(
+                            MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4,
+                            MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7,
+                            MIGRATION_7_8,
+                        )
                         // ⚠️ 不加 fallbackToDestructiveMigration*：任何情况下都不允许 Room 清库重建，
                         // 升降级遇到无法迁移的库宁可崩溃（崩溃日志可查），也不能静默抹掉用户数据
                         .build()

@@ -39,17 +39,21 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.xiaoman.memo.data.AppViewModel
+import com.xiaoman.memo.data.DraftKey
 import com.xiaoman.memo.data.QuarrelEntity
 import com.xiaoman.memo.domain.Quarrel
+import com.xiaoman.memo.ui.components.AutoDraft
 import com.xiaoman.memo.ui.components.EmptyView
 import com.xiaoman.memo.ui.components.FlipCard
 import com.xiaoman.memo.ui.components.SectionHead
 import com.xiaoman.memo.ui.components.XmCard
 import com.xiaoman.memo.ui.components.XmChip
+import com.xiaoman.memo.ui.components.rememberDraft
 import com.xiaoman.memo.ui.nav.R
 import com.xiaoman.memo.ui.theme.T
 import com.xiaoman.memo.ui.theme.Xm
 import com.xiaoman.memo.util.Dates
+import org.json.JSONObject
 
 /* ── 雨过 列表 ── */
 @Composable
@@ -257,7 +261,6 @@ fun QuarrelEditScreen(nav: NavHostController, vm: AppViewModel, quarrelId: Long,
     var heat by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(heatArg.coerceIn(1, 5)) }
     var card by androidx.compose.runtime.saveable.rememberSaveable(stateSaver = PoolItemSaver) { mutableStateOf<Quarrel.PoolItem?>(null) }
     var pact by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("") }
-    var confirmExit by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
     var date by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(Dates.fmt(Dates.today())) }
     var resolved by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
     var resolvedAt by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(0L) }
@@ -270,13 +273,16 @@ fun QuarrelEditScreen(nav: NavHostController, vm: AppViewModel, quarrelId: Long,
     var saveHint by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("") }
     var confirmDel by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
 
+    /* 载入标记：只铺一次表单；从「抽一张」返回 / Activity 重建后保留用户正在改的内容 */
+    var loaded by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(quarrelId == 0L) }
+
     fun fingerprint(): String = listOf(
         date, fault, emotion, heat.toString(),
         card?.t ?: "", pact.trim(), resolved.toString(), text.trim(), note.trim(),
     ).joinToString("|")
 
     LaunchedEffect(quarrelId) {
-        if (quarrelId != 0L) {
+        if (quarrelId != 0L && !loaded) {
             vm.daoQuarrel(quarrelId)?.let { q ->
                 text = q.text; fault = q.fault; emotion = q.emotions; heat = q.heat
                 pact = q.pact
@@ -288,8 +294,13 @@ fun QuarrelEditScreen(nav: NavHostController, vm: AppViewModel, quarrelId: Long,
                 originalUuid = q.uuid; createdTs = q.createdAt
                 originFp = fingerprint()
             }
+            loaded = true
         }
     }
+
+    val draft = rememberDraft(vm, DraftKey.QUARREL, quarrelId)
+    /* 只续写一次：重建后表单里已经是用户最新的字，别拿 1.5 秒前的草稿盖回去 */
+    var resumed by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
 
     fun saveNow(onDone: () -> Unit) {
         /* 标题留空时用「详细内容」第一行兜底：内容已经写了就不该保存不上（与点滴同一套规则） */
@@ -306,17 +317,52 @@ fun QuarrelEditScreen(nav: NavHostController, vm: AppViewModel, quarrelId: Long,
             createdAt = if (createdTs > 0) createdTs else System.currentTimeMillis(),
             uuid = originalUuid.ifBlank { java.util.UUID.randomUUID().toString() },
         )
-        vm.saveQuarrel(q) { onDone() }
+        /* 先清草稿再退出：否则页面离开组合时的兜底写入会把刚保存的记录又存回草稿 */
+        vm.saveQuarrel(q) { draft.finish(); onDone() }
     }
 
-    /* 新建：有输入就算脏；编辑：与载入时比对，翻篇/改写/换翻篇方式都能识别出来 */
+    /* 新建：只要有任何一处跟初始值不同就算脏——只抽了张卡、只调了情绪也要留住；
+       编辑：与载入时比对，翻篇/改写/换翻篇方式都能识别出来 */
     val dirty = if (quarrelId == 0L) {
-        text.isNotBlank() || pact.isNotBlank()
+        text.isNotBlank() || note.isNotBlank() || pact.isNotBlank() ||
+            fault != "both" || emotion.isNotBlank() || card != null ||
+            heat != heatArg.coerceIn(1, 5)
     } else {
         originFp.isNotBlank() && fingerprint() != originFp
     }
 
-    BackHandler(enabled = dirty) { confirmExit = true }
+    /* 进页面时续上没写完的记录（target 对不上就不动，不会把新记录盖到老记录上）。
+       等 loaded 再读：否则库里的原记录会随后铺上来，把草稿盖掉。 */
+    LaunchedEffect(quarrelId, loaded) {
+        if (resumed || !loaded) return@LaunchedEffect
+        resumed = true
+        draft.read()?.let { o ->
+            text = o.optString("text"); note = o.optString("note")
+            noteOpen = o.optBoolean("noteOpen", note.isNotBlank())
+            fault = o.optString("fault", fault); emotion = o.optString("emotion")
+            heat = o.optInt("heat", heat)
+            if (o.has("cardText")) {
+                val t = o.optString("cardText")
+                card = if (t.isBlank()) null
+                else Quarrel.PoolItem(o.optString("cardCat"), t, o.optBoolean("cardMeet"), o.optInt("cardLv"))
+            }
+            pact = o.optString("pact")
+        }
+    }
+
+    AutoDraft(draft, dirty) {
+        if (!dirty) null
+        else JSONObject().apply {
+            put("text", text); put("note", note); put("noteOpen", noteOpen)
+            put("fault", fault); put("emotion", emotion); put("heat", heat)
+            put("cardText", card?.t ?: ""); put("cardCat", card?.c ?: "")
+            put("cardMeet", card?.m ?: false); put("cardLv", card?.lv ?: 0)
+            put("pact", pact)
+        }
+    }
+
+    /* 返回 = 存草稿走人：写一半的记录留在本机，下次进来接着写；不会替你生成正式记录。 */
+    BackHandler { nav.popBackStack() }
 
     /* 从「抽一张」返回：接收所选翻篇方式 */
     val handle = nav.currentBackStackEntry?.savedStateHandle
@@ -341,7 +387,7 @@ fun QuarrelEditScreen(nav: NavHostController, vm: AppViewModel, quarrelId: Long,
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 Modifier.height(34.dp).clip(RoundedCornerShape(17.dp)).background(MaterialTheme.colorScheme.surface).clickable {
-                    if (dirty) confirmExit = true else nav.popBackStack()
+                    nav.popBackStack()
                 }.padding(horizontal = 14.dp),
                 contentAlignment = Alignment.Center,
             ) { Text("×", fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface) }
@@ -522,25 +568,11 @@ fun QuarrelEditScreen(nav: NavHostController, vm: AppViewModel, quarrelId: Long,
             title = { Text("删除这次记录？") },
             text = { Text("对方那边也会同步删除，删掉就不会再出现在「雨过」里了。") },
             confirmButton = {
-                TextButton(onClick = { confirmDel = false; vm.deleteQuarrel(quarrelId); nav.popBackStack() }) {
+                TextButton(onClick = { confirmDel = false; vm.deleteQuarrel(quarrelId); draft.finish(); nav.popBackStack() }) {
                     Text("删除", color = c.qDeep)
                 }
             },
             dismissButton = { TextButton(onClick = { confirmDel = false }) { Text("取消") } },
-        )
-    }
-
-    if (confirmExit) {
-        AlertDialog(
-            onDismissRequest = { confirmExit = false },
-            title = { Text("还没保存") },
-            text = { Text("要保存这次记录，还是放弃？") },
-            confirmButton = {
-                TextButton(onClick = { confirmExit = false }) { Text("继续编辑") }
-            },
-            dismissButton = {
-                TextButton(onClick = { confirmExit = false; nav.popBackStack() }) { Text("放弃") }
-            },
         )
     }
 }

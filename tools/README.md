@@ -53,6 +53,44 @@ python tools/mini_dav.py        # 监听 0.0.0.0:8790，根目录 build/davroot�
 
 测试凭据是硬编码的公开占位值，服务器**不带任何访问控制且监听所有网卡**，只可在本机或可信内网临时运行，用完即停。
 
+## render_widget_designs.py
+
+**离线渲染桌面卡片设计图**，不连模拟器 / 不装 APK。直接解析 `res/layout/widget_*.xml` 与
+`res/xml/widget_*_info.xml`，用字体真实度量做 measure/layout（LinearLayout 权重与 gravity、
+baselineAligned、FrameLayout 居中、RelativeLayout 两端对齐），按 dp 画成 PNG，并输出排版诊断
+（内容超框、文字被 maxLines 截断）。
+
+```bash
+python tools/render_widget_designs.py                 # 8 张卡 × 三档尺寸（55 / 74 / 92dp 格子）+ 声明下限档
+python tools/render_widget_designs.py --only combo    # 只渲某一张
+python tools/render_widget_designs.py --scale 8       # 放大细看
+```
+
+产物在 `build/widget-designs/`：`<widget>_<档位>.png`、`<widget>_all.png`（三档横排）、`report.txt`。
+模拟器屏幕尺寸与真机、各家 launcher 的网格差异大，**卡片排版/尺寸问题以这套设计图为准**，
+结论见 [`docs/widget-design-review.md`](../docs/widget-design-review.md)。
+**出正式包前 `report.txt` 必须清零（含可达下限档）**；id 类规则（`FIT` / `HIDE_BELOW` / `maxLines`）
+一旦失效会静默变成一派假告警，改渲染器后务必抽查条数。
+
+## gen_widget_boards.py
+
+生成 8 张卡片的**卡面位图**与「添加小工具」面板的预览图，共 15 个文件（全部落在
+`res/drawable-nodpi/`）：
+
+| 产出 | 数量 | 用途 |
+| --- | --- | --- |
+| `w_board_{square,big,wide,plain,slim2}.webp` | 5 | 布局里的卡面底图（AI 纸面纹理 + 白纱 + 细线框 + 圆角烘进 alpha） |
+| `w_face_{her,him}.webp` | 2 | 3×3 顶栏的圆形头像 |
+| `widget_preview_*.webp` | 8 | 「添加小工具」面板预览图 |
+
+```bash
+python tools/gen_widget_boards.py
+```
+
+**不要再改回 XML shape 纯色底**（会丢纹理且易与同名位图冲突）。圆角是百分比烘进 alpha，
+刻意压到 `RADIUS_RATIO = 0.035` 以小于系统 widget 圆角，避免四角露出系统底色；改色板时
+脚本里的颜色常量必须与 `res/values/widget_colors.xml` 逐值同步。
+
 ## ui.py
 
 无视觉 UI 探针：没有图像识别，靠 `uiautomator dump` 的控件树定位并操作，用于回归验收。

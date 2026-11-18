@@ -33,6 +33,8 @@ object Backup {
             actMarks = dao.actMarksOnce(),
             customTags = dao.customTagsAllOnce(),
             poolOverrides = dao.poolOverridesAllOnce(),
+            moods = dao.moodsAllOnce(),
+            mails = dao.mailsAllOnce(),
         )
     }
 
@@ -56,6 +58,8 @@ object Backup {
             actMarks = dao.actMarksOnce(),
             customTags = dao.customTagsOnce(),
             poolOverrides = overrides,
+            moods = dao.moodsAllOnce().filter { !it.deleted },
+            mails = dao.mailsAllOnce().filter { !it.deleted },
             actPool = Pools.effectiveAct(overrides),
             qPool = Pools.effectivePool(overrides),
             cycleStats = CycleMath.stats(cycles),
@@ -73,6 +77,8 @@ object Backup {
             actMarks = state.actMarks,
             customTags = state.customTags,
             poolOverrides = state.poolOverrides,
+            moods = state.moods,
+            mails = state.mails,
         )
     }
 
@@ -89,10 +95,12 @@ object Backup {
         actMarks: List<ActMarkEntity>,
         customTags: List<CustomTagEntity>,
         poolOverrides: List<PoolOverrideEntity>,
+        moods: List<MoodEntity>,
+        mails: List<MailEntity>,
     ): String {
         val root = JSONObject()
         root.put("app", "xiaoman")
-        root.put("version", 2)
+        root.put("version", 3)
         root.put("exportedAt", System.currentTimeMillis())
         root.put(
             "profile",
@@ -200,11 +208,32 @@ object Backup {
                 put(JSONObject().put("text", mk.text).put("fav", mk.fav).put("played", mk.played).put("updatedAt", mk.updatedAt))
             }
         })
+        /* v7「心晴」：老版本读到不认识的字段会忽略，新版本读老快照则此数组为空，双向兼容 */
+        root.put("moods", JSONArray().apply {
+            moods.forEach { md ->
+                put(
+                    JSONObject().put("uuid", md.uuid).put("date", md.date).put("author", md.author)
+                        .put("mood", md.mood).put("createdAt", md.createdAt)
+                        .put("updatedAt", md.updatedAt).put("deleted", md.deleted),
+                )
+            }
+        })
+        /* v8「云笺」：只增不删。老版本读到未知字段会忽略，新版本读老快照则此数组为空 */
+        root.put("mails", JSONArray().apply {
+            mails.forEach { ml ->
+                put(
+                    JSONObject().put("uuid", ml.uuid).put("author", ml.author)
+                        .put("title", ml.title).put("body", ml.body)
+                        .put("sentAt", ml.sentAt).put("readAt", ml.readAt)
+                        .put("updatedAt", ml.updatedAt).put("deleted", ml.deleted),
+                )
+            }
+        })
         return root.toString(2)
     }
 
-    data class ImportResult(val memos: Int, val checklists: Int, val plans: Int, val quarrels: Int, val rules: Int, val cycles: Int, val letters: Int, val tags: Int, val overrides: Int, val profile: Boolean) {
-        val total: Int get() = memos + checklists + plans + quarrels + rules + cycles + letters + tags + overrides
+    data class ImportResult(val memos: Int, val checklists: Int, val plans: Int, val quarrels: Int, val rules: Int, val cycles: Int, val letters: Int, val tags: Int, val overrides: Int, val moods: Int, val mails: Int, val profile: Boolean) {
+        val total: Int get() = memos + checklists + plans + quarrels + rules + cycles + letters + tags + overrides + moods + mails
     }
 
     /** 追加式导入：带 uuid 的行按 uuid 幂等（同键且更新则覆盖，否则跳过）；
@@ -214,7 +243,7 @@ object Backup {
         if (root.optString("app") != "xiaoman") throw IllegalArgumentException("不是小满的备份文件")
         val dao = db.dao()
         val now = System.currentTimeMillis()
-        var nMemos = 0; var nCls = 0; var nPlans = 0; var nQ = 0; var nR = 0; var nC = 0; var nL = 0; var nTags = 0; var nOv = 0; var hasProfile = false
+        var nMemos = 0; var nCls = 0; var nPlans = 0; var nQ = 0; var nR = 0; var nC = 0; var nL = 0; var nTags = 0; var nOv = 0; var nMoods = 0; var nMails = 0; var hasProfile = false
 
         val prof = root.optJSONObject("profile")
         if (prof != null) {
@@ -406,6 +435,25 @@ object Backup {
             else if (base.updatedAt > match.updatedAt) dao.updatePoolOverride(base.copy(id = match.id))
             nOv++
         }
+        val localMoods = dao.moodsAllOnce()
+        arr("moods") { md ->
+            val date = md.optString("date")
+            val author = md.optString("author", "her")
+            if (date.isBlank()) return@arr
+            val uuid = md.optString("uuid")
+            /* 没有 uuid 的老备份：按「日期 + 人」定位（一人一天一条） */
+            val match = if (uuid.isNotBlank()) localMoods.find { it.uuid == uuid }
+                else localMoods.find { it.date == date && it.author == author }
+            val base = MoodEntity(
+                date = date, author = author, mood = md.optString("mood", "tian"),
+                createdAt = md.optLong("createdAt", now), deleted = md.optBoolean("deleted"),
+                uuid = uuid.ifBlank { freshUuid() }, updatedAt = md.optLong("updatedAt", now),
+            )
+            when {
+                match == null -> { dao.upsertMood(base); nMoods++ }
+                base.updatedAt > match.updatedAt -> { dao.updateMood(base.copy(id = match.id)); nMoods++ }
+            }
+        }
         val localLetters = dao.lettersAllOnce()
         arr("letters") { l ->
             val uuid = l.optString("uuid")
@@ -419,6 +467,23 @@ object Backup {
             else if (base.updatedAt > match.updatedAt) dao.upsertLetter(base.copy(id = match.id))
             nL++
         }
-        return ImportResult(nMemos, nCls, nPlans, nQ, nR, nC, nL, nTags, nOv, hasProfile)
+        val localMails = dao.mailsAllOnce()
+        arr("mails") { ml ->
+            val sentAt = ml.optLong("sentAt", 0)
+            if (sentAt <= 0) return@arr
+            val uuid = ml.optString("uuid")
+            /* 云笺只能增：deleted 一律按 false 落地，绝不因为备份里带墓碑就抹掉信 */
+            val base = MailEntity(
+                author = ml.optString("author", "her"), title = ml.optString("title"), body = ml.optString("body"),
+                sentAt = sentAt, readAt = ml.optLong("readAt", 0), deleted = false,
+                uuid = uuid.ifBlank { freshUuid() }, updatedAt = ml.optLong("updatedAt", now),
+            )
+            val match = if (uuid.isNotBlank()) localMails.find { it.uuid == uuid } else null
+            when {
+                match == null -> { dao.insertMail(base); nMails++ }
+                base.updatedAt > match.updatedAt -> { dao.updateMail(base.copy(id = match.id)); nMails++ }
+            }
+        }
+        return ImportResult(nMemos, nCls, nPlans, nQ, nR, nC, nL, nTags, nOv, nMoods, nMails, hasProfile)
     }
 }

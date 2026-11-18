@@ -1,5 +1,6 @@
 package com.xiaoman.memo.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -34,6 +35,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,16 +50,21 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.xiaoman.memo.data.AppViewModel
 import com.xiaoman.memo.data.CycleEntity
+import com.xiaoman.memo.data.DraftKey
 import com.xiaoman.memo.domain.CycleMath
+import com.xiaoman.memo.ui.components.AutoDraft
 import com.xiaoman.memo.ui.components.EmptyView
 import com.xiaoman.memo.ui.components.SectionHead
+import com.xiaoman.memo.ui.components.StrListSaver
 import com.xiaoman.memo.ui.components.TagChip
 import com.xiaoman.memo.ui.components.XmCard
 import com.xiaoman.memo.ui.components.XmChip
+import com.xiaoman.memo.ui.components.rememberDraft
 import com.xiaoman.memo.ui.nav.R
 import com.xiaoman.memo.ui.theme.T
 import com.xiaoman.memo.ui.theme.Xm
 import com.xiaoman.memo.util.Dates
+import org.json.JSONObject
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -71,7 +78,10 @@ fun CycleScreen(nav: NavHostController, vm: AppViewModel) {
     val st = ui.cycleStats
     val phase = ui.phaseToday
     val today = Dates.today()
+    val thisYear = today.year
     var calYm by remember { mutableStateOf(java.time.YearMonth.now()) }
+    /* 历史记录的年份筛选：0 = 全部年份（跨年使用后靠它把两个「11月6日」分开） */
+    var yearFilter by remember { mutableStateOf(0) }
 
     LazyColumn(
         Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
@@ -150,9 +160,9 @@ fun CycleScreen(nav: NavHostController, vm: AppViewModel) {
                     val nextLine = when {
                         curIdx in 0..2 -> {
                             val nx = spans[curIdx + 1]
-                            "接下来：${CycleMath.PH_NAMES[nx.k]} · 预计 ${Dates.cn(nx.start)} 开始"
+                            "接下来：${CycleMath.PH_NAMES[nx.k]} · 预计 ${Dates.cnY(nx.start, thisYear)} 开始"
                         }
-                        curIdx == 3 -> "接下来：下次经期 · 预计 ${Dates.cn(st.nextStart)} 开始"
+                        curIdx == 3 -> "接下来：下次经期 · 预计 ${Dates.cnY(st.nextStart, thisYear)} 开始"
                         else -> ""
                     }
                     if (nextLine.isNotEmpty()) {
@@ -164,75 +174,13 @@ fun CycleScreen(nav: NavHostController, vm: AppViewModel) {
                     ) {
                         Text(
                             when {
-                                left > 0 -> "下次经期预计 ${Dates.cn(st.nextStart)}（还有 $left 天）"
+                                left > 0 -> "下次经期预计 ${Dates.cnY(st.nextStart, thisYear)}（还有 $left 天）"
                                 left == 0 -> "今天可能是经期开始日"
-                                else -> "经期已推迟 ${-left} 天，注意身体"
+                                else -> "经期已推迟 ${-left} 天"
                             },
                             fontSize = 12.sp, color = Color.White,
                         )
                     }
-                }
-            }
-        }
-
-        item { SectionHead("本周期四个阶段", if (st != null) "按平均周期估算" else "") }
-        item {
-            XmCard {
-                if (st == null) {
-                    Text(
-                        "记录一次经期后，这里会展示完整的四个阶段",
-                        fontSize = 12.sp, color = MaterialTheme.colorScheme.outline,
-                        textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(vertical = 26.dp),
-                    )
-                } else {
-                    val spans = CycleMath.phaseSpans(st)
-                    val cur = CycleMath.spanIndexOf(Dates.fmt(today), spans)
-                    spans.forEachIndexed { i, s ->
-                        if (i > 0) {
-                            Box(
-                                Modifier.fillMaxWidth().height(1.dp)
-                                    .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
-                            )
-                        }
-                        Row(Modifier.fillMaxWidth().padding(vertical = 11.dp), verticalAlignment = Alignment.Top) {
-                            Box(
-                                Modifier.padding(top = 3.dp).height(11.dp).aspectRatio(1f)
-                                    .clip(RoundedCornerShape(4.dp)).background(c.phGrad[s.k - 1].second),
-                            )
-                            Column(Modifier.weight(1f).padding(start = 10.dp)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        CycleMath.PH_NAMES[s.k] ?: "", fontSize = 13.sp,
-                                        fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface,
-                                    )
-                                    if (i == cur) {
-                                        Box(Modifier.padding(start = 7.dp)) {
-                                            TagChip("现在", MaterialTheme.colorScheme.onPrimary, c.accent)
-                                        }
-                                    }
-                                    Box(Modifier.weight(1f))
-                                    Text(
-                                        "约 ${s.days} 天",
-                                        fontSize = 11.sp, color = MaterialTheme.colorScheme.outline,
-                                    )
-                                }
-                                Text(
-                                    "${Dates.cn(s.start)} – ${Dates.cn(s.end)}",
-                                    fontSize = 11.sp, color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(top = 1.dp),
-                                )
-                                Text(
-                                    CycleMath.PH_TIPS[s.k] ?: "",
-                                    fontSize = 11.sp, lineHeight = 16.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 3.dp),
-                                )
-                            }
-                        }
-                    }
-                    Text(
-                        "阶段区间按平均周期与末次经期推算，每个人的节奏略有不同，仅作了解身体的参考",
-                        fontSize = 11.sp, lineHeight = 16.sp, color = MaterialTheme.colorScheme.outline,
-                        modifier = Modifier.padding(top = 9.dp),
-                    )
                 }
             }
         }
@@ -286,6 +234,63 @@ fun CycleScreen(nav: NavHostController, vm: AppViewModel) {
             }
         }
 
+        item { SectionHead("本周期四个阶段", if (st != null) "按平均周期估算" else "") }
+        item {
+            XmCard {
+                if (st == null) {
+                    Text(
+                        "记录一次经期后，这里会展示完整的四个阶段",
+                        fontSize = 12.sp, color = MaterialTheme.colorScheme.outline,
+                        textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(vertical = 26.dp),
+                    )
+                } else {
+                    val spans = CycleMath.phaseSpans(st)
+                    val cur = CycleMath.spanIndexOf(Dates.fmt(today), spans)
+                    spans.forEachIndexed { i, s ->
+                        if (i > 0) {
+                            Box(
+                                Modifier.fillMaxWidth().height(1.dp)
+                                    .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
+                            )
+                        }
+                        Row(Modifier.fillMaxWidth().padding(vertical = 11.dp), verticalAlignment = Alignment.Top) {
+                            Box(
+                                Modifier.padding(top = 3.dp).height(11.dp).aspectRatio(1f)
+                                    .clip(RoundedCornerShape(4.dp)).background(c.phGrad[s.k - 1].second),
+                            )
+                            Column(Modifier.weight(1f).padding(start = 10.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        CycleMath.PH_NAMES[s.k] ?: "", fontSize = 13.sp,
+                                        fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface,
+                                    )
+                                    if (i == cur) {
+                                        Box(Modifier.padding(start = 7.dp)) {
+                                            TagChip("现在", MaterialTheme.colorScheme.onPrimary, c.accent)
+                                        }
+                                    }
+                                    Box(Modifier.weight(1f))
+                                    Text(
+                                        "约 ${s.days} 天",
+                                        fontSize = 11.sp, color = MaterialTheme.colorScheme.outline,
+                                    )
+                                }
+                                Text(
+                                    Dates.cnRange(s.start, s.end, thisYear),
+                                    fontSize = 11.sp, color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(top = 1.dp),
+                                )
+                                Text(
+                                    CycleMath.PH_TIPS[s.k] ?: "",
+                                    fontSize = 11.sp, lineHeight = 16.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 3.dp),
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         item { SectionHead("预测", if (st != null) "基于 ${st.records} 次记录" else "") }
         item {
             XmCard {
@@ -312,14 +317,14 @@ fun CycleScreen(nav: NavHostController, vm: AppViewModel) {
                         Text(basis, fontSize = 12.sp, lineHeight = 17.sp, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(top = 4.dp))
                         if (st.outliers.isNotEmpty()) {
                             Text(
-                                "已忽略异常间隔：${st.outliers.joinToString(" · ")} 天（间隔过短或过长，可能漏记或误记）",
+                                "已忽略异常间隔：${st.outliers.joinToString(" · ")} 天",
                                 fontSize = 11.sp, lineHeight = 16.sp, color = MaterialTheme.colorScheme.outline,
                                 modifier = Modifier.padding(top = 3.dp),
                             )
                         }
                         if (st.irregular) {
                             Text(
-                                "最近几次周期长短相差 ${st.usedGaps.max() - st.usedGaps.min()} 天，波动较大，预测仅供参考",
+                                "最近几次周期相差 ${st.usedGaps.max() - st.usedGaps.min()} 天",
                                 fontSize = 11.sp, lineHeight = 16.sp, color = MaterialTheme.colorScheme.outline,
                                 modifier = Modifier.padding(top = 3.dp),
                             )
@@ -327,62 +332,91 @@ fun CycleScreen(nav: NavHostController, vm: AppViewModel) {
                     }
                     PredRow("平均周期", "${st.avgCycle} 天", modifier = Modifier.padding(top = 6.dp))
                     PredRow("平均经期", "${st.avgPeriod} 天")
-                    PredRow("卵泡期（估算）", "${Dates.cn(fol.start)} – ${Dates.cn(fol.end)}", c.phGrad[1].second)
-                    PredRow("排卵期（估算）", "${Dates.cn(ovu.start)} – ${Dates.cn(ovu.end)}", c.phGrad[2].second)
-                    PredRow("黄体期（估算）", "${Dates.cn(lut.start)} – ${Dates.cn(lut.end)}", c.phGrad[3].second)
-                    PredRow("下次经期", Dates.cn(st.nextStart), c.accentDeep)
-                    Text(
-                        "排卵通常发生在下次月经前 14 天左右，其余阶段由预测周期与末次经期推算；以上均为估算值，仅作了解身体的参考",
-                        fontSize = 11.sp, lineHeight = 17.sp, color = MaterialTheme.colorScheme.outline,
-                        modifier = Modifier.padding(top = 9.dp),
-                    )
+                    PredRow("卵泡期（估算）", Dates.cnRange(fol.start, fol.end, thisYear), c.phGrad[1].second)
+                    PredRow("排卵期（估算）", Dates.cnRange(ovu.start, ovu.end, thisYear), c.phGrad[2].second)
+                    PredRow("黄体期（估算）", Dates.cnRange(lut.start, lut.end, thisYear), c.phGrad[3].second)
+                    PredRow("下次经期", Dates.cnY(st.nextStart, thisYear), c.accentDeep)
                 }
             }
         }
 
         item { SectionHead("历史记录", "${ui.cycles.size} 条") }
+
+        /* 年份筛选：跨年使用后，先让年份把记录分流，再进去看月日 */
+        val allYears = ui.cycles.map { Dates.yearOf(it.dateKey()) }.distinct().sortedDescending()
+        if (allYears.size > 1) {
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                    XmChip("全部", on = yearFilter == 0, accent = c.accent) { yearFilter = 0 }
+                    allYears.forEach { y ->
+                        XmChip(Dates.yearLabel(y), on = yearFilter == y, accent = c.accent) { yearFilter = y }
+                    }
+                }
+            }
+        }
+
         if (ui.cycles.isEmpty()) {
             item { EmptyView("暂无记录") }
         } else {
-            // 按「记录当日」排序展示（B4），而不是统一显示经期开始日期
-            val rows = ui.cycles.sortedByDescending { if (it.recordDate.isNotBlank()) it.recordDate else it.start }
-            items(rows.size) { i ->
-                val r = rows[i]
-                val F = listOf("少", "中", "多")
-                val P = listOf("没有", "轻微", "明显", "很痛")
-                Row(
-                    Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surface)
-                        .clickable { nav.navigate("cycleEdit?cycleId=${r.id}") }.padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    TagChip(Dates.cn(if (r.recordDate.isNotBlank()) r.recordDate else r.start), MaterialTheme.colorScheme.onSurfaceVariant, c.tagBg)
-                    Column(Modifier.weight(1f).padding(start = 10.dp)) {
-                        if (r.daily) {
-                            Text(
-                                "当日记录" + (if (r.mood.isNotBlank()) " · 心情 ${r.mood}" else "") + (if (r.symptoms.isNotBlank()) " · ${r.symptoms}" else ""),
-                                fontSize = 13.sp, lineHeight = 19.sp, color = MaterialTheme.colorScheme.onSurface,
-                            )
-                        } else {
-                            Text(
-                                (if (r.end.isNotBlank()) "持续 ${Dates.diff(r.start, r.end).toInt() + 1} 天" else "进行中") + " · 量${F[r.flow.coerceIn(0, 2)]} · 痛经${P[r.pain.coerceIn(0, 3)]}",
-                                fontSize = 13.sp, lineHeight = 19.sp, color = MaterialTheme.colorScheme.onSurface,
-                            )
+            // 按「记录当日」排序展示（B4），而不是统一显示经期开始日期；同一天区间记录排在当日记录前
+            val rows = ui.cycles
+                .filter { yearFilter == 0 || Dates.yearOf(it.dateKey()) == yearFilter }
+                .sortedWith(
+                    compareByDescending<CycleEntity> { it.dateKey() }
+                        .thenBy { if (it.daily) 1 else 0 }
+                        .thenByDescending { it.id },
+                )
+            /* 分组标题 + 记录拍平成一条列表：跨年时两个「11月6日」各自落在自己的年份下 */
+            val nodes = mutableListOf<Any>()
+            rows.groupBy { Dates.yearOf(it.dateKey()) }.toSortedMap(compareByDescending { it })
+                .forEach { (y, list) ->
+                    if (yearFilter == 0) nodes.add(CycleYearHead(y, list.size, y == thisYear))
+                    nodes.addAll(list)
+                }
+
+            items(nodes.size) { i ->
+                val node = nodes[i]
+                if (node is CycleYearHead) {
+                    YearDivider(node)
+                } else {
+                    val r = node as CycleEntity
+                    val F = listOf("少", "中", "多")
+                    val P = listOf("没有", "轻微", "明显", "很痛")
+                    Row(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surface)
+                            .clickable { nav.navigate("cycleEdit?cycleId=${r.id}") }.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        TagChip(Dates.cn(r.dateKey()), MaterialTheme.colorScheme.onSurfaceVariant, c.tagBg)
+                        Column(Modifier.weight(1f).padding(start = 10.dp)) {
+                            if (r.daily) {
+                                Text(
+                                    "当日记录" + (if (r.mood.isNotBlank()) " · 心情 ${r.mood}" else "") + (if (r.symptoms.isNotBlank()) " · ${r.symptoms}" else ""),
+                                    fontSize = 13.sp, lineHeight = 19.sp, color = MaterialTheme.colorScheme.onSurface,
+                                )
+                            } else {
+                                Text(
+                                    (if (r.end.isNotBlank()) "持续 ${Dates.diff(r.start, r.end).toInt() + 1} 天" else "进行中") + " · 量${F[r.flow.coerceIn(0, 2)]} · 痛经${P[r.pain.coerceIn(0, 3)]}",
+                                    fontSize = 13.sp, lineHeight = 19.sp, color = MaterialTheme.colorScheme.onSurface,
+                                )
+                            }
+                            if (!r.daily && (r.symptoms.isNotBlank() || r.mood.isNotBlank())) {
+                                Text(
+                                    listOf(r.symptoms, if (r.mood.isNotBlank()) "情绪 ${r.mood}" else "").filter { it.isNotBlank() }.joinToString(" · "),
+                                    fontSize = 11.sp, color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(top = 2.dp),
+                                )
+                            }
+                            if (r.note.isNotBlank()) {
+                                Text(r.note, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
+                            }
+                            /* 跨年补录时「记于」也带上年份，避免和去年同一天混淆 */
+                            if (!r.daily && r.recordDate.isNotBlank() && r.recordDate != r.start) {
+                                Text("记于 ${Dates.cnY(r.recordDate, thisYear)}", fontSize = 10.sp, color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(top = 1.dp))
+                            }
                         }
-                        if (!r.daily && (r.symptoms.isNotBlank() || r.mood.isNotBlank())) {
-                            Text(
-                                listOf(r.symptoms, if (r.mood.isNotBlank()) "情绪 ${r.mood}" else "").filter { it.isNotBlank() }.joinToString(" · "),
-                                fontSize = 11.sp, color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(top = 2.dp),
-                            )
-                        }
-                        if (r.note.isNotBlank()) {
-                            Text(r.note, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
-                        }
-                        if (!r.daily && r.recordDate.isNotBlank() && r.recordDate != r.start) {
-                            Text("记于 ${Dates.cn(r.recordDate)}", fontSize = 10.sp, color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(top = 1.dp))
-                        }
+                        Text(" ✎", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, softWrap = false, modifier = Modifier.clickable { nav.navigate("cycleEdit?cycleId=${r.id}") })
+                        Text(" ✕", fontSize = 12.sp, color = MaterialTheme.colorScheme.outline, maxLines = 1, softWrap = false, modifier = Modifier.clickable { deleting = r })
                     }
-                    Text(" ✎", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, softWrap = false, modifier = Modifier.clickable { nav.navigate("cycleEdit?cycleId=${r.id}") })
-                    Text(" ✕", fontSize = 12.sp, color = MaterialTheme.colorScheme.outline, maxLines = 1, softWrap = false, modifier = Modifier.clickable { deleting = r })
                 }
             }
         }
@@ -391,10 +425,32 @@ fun CycleScreen(nav: NavHostController, vm: AppViewModel) {
     deleting?.let { r ->
         AlertDialog(
             onDismissRequest = { deleting = null },
-            title = { Text("删除 ${Dates.cn(if (r.recordDate.isNotBlank()) r.recordDate else r.start)} 的记录？") },
+            title = { Text("删除 ${Dates.cnY(r.dateKey(), thisYear)} 的记录？") },
             confirmButton = { TextButton(onClick = { vm.deleteCycle(r.id); deleting = null }) { Text("删除", color = c.accentDeep) } },
             dismissButton = { TextButton(onClick = { deleting = null }) { Text("取消") } },
         )
+    }
+}
+
+/* 历史记录里的年份分组标题 */
+private data class CycleYearHead(val year: Int, val count: Int, val isCurrent: Boolean)
+
+/* 记录展示/排序用的日期键：每日记录取记录日，区间记录取开始日（都含年份） */
+private fun CycleEntity.dateKey(): String = if (recordDate.isNotBlank()) recordDate else start
+
+@Composable
+private fun YearDivider(h: CycleYearHead) {
+    Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            Dates.yearLabel(h.year) + if (h.isCurrent) " · 今年" else "",
+            fontSize = 12.sp, fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Box(
+            Modifier.weight(1f).padding(horizontal = 8.dp).height(1.dp)
+                .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f)),
+        )
+        Text("${h.count} 条", fontSize = 10.sp, color = MaterialTheme.colorScheme.outline)
     }
 }
 
@@ -492,32 +548,81 @@ fun CycleCalendar(ui: com.xiaoman.memo.data.AppUiState, ym: java.time.YearMonth)
 @Composable
 fun CycleEditScreen(nav: NavHostController, vm: AppViewModel, cycleId: Long = 0L, dailyArg: Boolean = false) {
     val c = Xm
-    var start by remember { mutableStateOf("") }
-    var end by remember { mutableStateOf("") }
-    var flow by remember { mutableStateOf(1) }
-    var pain by remember { mutableStateOf(0) }
-    var mood by remember { mutableStateOf("") }
-    var syms by remember { mutableStateOf(listOf<String>()) }
-    var note by remember { mutableStateOf("") }
-    var daily by remember { mutableStateOf(dailyArg) }
+    /* 表单全部 rememberSaveable：写到一半改字号 / 分屏重建也不丢 */
+    var start by rememberSaveable { mutableStateOf("") }
+    var end by rememberSaveable { mutableStateOf("") }
+    var flow by rememberSaveable { mutableStateOf(1) }
+    var pain by rememberSaveable { mutableStateOf(0) }
+    var mood by rememberSaveable { mutableStateOf("") }
+    var syms by rememberSaveable(stateSaver = StrListSaver) { mutableStateOf(listOf<String>()) }
+    var note by rememberSaveable { mutableStateOf("") }
+    var daily by rememberSaveable { mutableStateOf(dailyArg) }
     var err by remember { mutableStateOf("") }
     var pickDate by remember { mutableStateOf<String?>(null) }
     var originalCycle by remember { mutableStateOf<CycleEntity?>(null) }
-    var loaded by remember { mutableStateOf(cycleId == 0L) }
-    var recordDate by remember { mutableStateOf(Dates.fmt(Dates.today())) }
+    var loaded by rememberSaveable { mutableStateOf(cycleId == 0L) }
+    var recordDate by rememberSaveable { mutableStateOf(Dates.fmt(Dates.today())) }
+    /* 载入时的内容指纹：编辑既有记录时用来判断「有没有改过」，避免打开就按返回也当成脏 */
+    var originFp by rememberSaveable { mutableStateOf("") }
+
+    fun fingerprint() = listOf(start, end, flow.toString(), pain.toString(), mood, syms.joinToString(","), note.trim(), recordDate)
+        .joinToString("|")
 
     LaunchedEffect(cycleId) {
-        if (cycleId != 0L) {
+        if (cycleId != 0L && !loaded) {
             vm.daoCycle(cycleId)?.let { r ->
                 originalCycle = r
                 start = r.start; end = r.end; flow = r.flow; pain = r.pain
                 mood = r.mood; syms = r.symptoms.split(",").filter { it.isNotBlank() }
                 note = r.note; daily = r.daily
                 recordDate = if (r.recordDate.isNotBlank()) r.recordDate else r.start
+                originFp = fingerprint()
                 loaded = true
             }
         }
     }
+
+    /* 「记一次」与「记今天状态」是两个场景，草稿分开存：避免把一段周期填成一条当日状态 */
+    val draftKey = if (daily) DraftKey.CYCLE_DAILY else DraftKey.CYCLE
+    val draft = rememberDraft(vm, draftKey, cycleId)
+    var resumed by rememberSaveable { mutableStateOf(false) }
+
+    /* 新建：与初始值比对；编辑：与载入时比对。选过日期/调过经量/写过备注都算改过。 */
+    val dirty = if (cycleId == 0L) {
+        if (daily) {
+            flow != 1 || pain != 0 || mood.isNotBlank() || syms.isNotEmpty() || note.isNotBlank() || recordDate != Dates.fmt(Dates.today())
+        } else {
+            start.isNotBlank() || end.isNotBlank() || flow != 1 || pain != 0 || mood.isNotBlank() || syms.isNotEmpty() || note.isNotBlank()
+        }
+    } else {
+        originFp.isNotBlank() && fingerprint() != originFp
+    }
+
+    /* 进页面时续上没写完的记录（target 对不上就不动）。等 loaded 再读，免得被原记录盖掉。 */
+    LaunchedEffect(cycleId, loaded) {
+        if (resumed || !loaded) return@LaunchedEffect
+        resumed = true
+        draft.read()?.let { o ->
+            start = o.optString("start", start); end = o.optString("end", end)
+            flow = o.optInt("flow", flow); pain = o.optInt("pain", pain)
+            mood = o.optString("mood", mood)
+            syms = o.optString("syms").split(",").filter { it.isNotBlank() }
+            note = o.optString("note", note)
+            recordDate = o.optString("recordDate", recordDate)
+        }
+    }
+
+    AutoDraft(draft, dirty) {
+        if (!dirty) null
+        else JSONObject().apply {
+            put("start", start); put("end", end); put("flow", flow); put("pain", pain)
+            put("mood", mood); put("syms", syms.joinToString(",")); put("note", note)
+            put("recordDate", recordDate)
+        }
+    }
+
+    /* 返回 = 存草稿走人：填了一半的记录留在本机，下次进来接着写；不会替你生成正式记录。 */
+    BackHandler { nav.popBackStack() }
 
     val moods = listOf("平静", "烦躁", "低落", "想哭", "黏人", "还好")
     val symptoms = listOf("腰酸", "头痛", "腹胀", "疲惫", "胸胀", "失眠", "食欲差", "长痘")
@@ -531,7 +636,9 @@ fun CycleEditScreen(nav: NavHostController, vm: AppViewModel, cycleId: Long = 0L
                     start = recordDate, end = "", flow = flow, pain = pain, mood = mood,
                     symptoms = syms.joinToString(","), note = note.trim(), daily = true, recordDate = recordDate,
                 )
+            /* 先清草稿再退出：否则页面离开组合时的兜底写入会把刚保存的内容又存回草稿 */
             vm.saveCycle(base)
+            draft.finish()
             nav.popBackStack()
             return
         }
@@ -546,6 +653,7 @@ fun CycleEditScreen(nav: NavHostController, vm: AppViewModel, cycleId: Long = 0L
                 recordDate = if (originalCycle != null) (if (originalCycle!!.recordDate.isNotBlank()) originalCycle!!.recordDate else recordDate) else recordDate,
             ),
         )
+        draft.finish()
         nav.popBackStack()
     }
 
@@ -665,24 +773,38 @@ fun CycleEditScreen(nav: NavHostController, vm: AppViewModel, cycleId: Long = 0L
     }
 
     pickDate?.let { which ->
-        val state = rememberDatePickerState(initialSelectedDateMillis = System.currentTimeMillis())
-        DatePickerDialog(
-            onDismissRequest = { pickDate = null },
-            confirmButton = {
-                TextButton(onClick = {
-                    state.selectedDateMillis?.let { ms ->
-                        val d = Instant.ofEpochMilli(ms).atZone(ZoneId.systemDefault()).toLocalDate()
-                        when (which) {
-                            "start" -> start = Dates.fmt(d)
-                            "end" -> end = Dates.fmt(d)
-                            else -> recordDate = Dates.fmt(d)
+        /* 关键：选择器必须锚在「这条记录原本的日期」上。
+           旧实现固定传 System.currentTimeMillis()，补录/编辑去年记录时默认停在今天，
+           用户直接点「确定」就会把 2025-11-06 存成 2026-11-06，从而在第二年凭空多出一条同月同日记录。 */
+        val curRaw = when (which) {
+            "start" -> start
+            "end" -> end
+            else -> recordDate
+        }
+        val anchorMs = runCatching {
+            Dates.parse(curRaw).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        }.getOrNull() ?: System.currentTimeMillis()
+        /* key(which)：在「开始日期 → 结束日期」之间直接切换时重建状态，避免沿用上一个选择器的位置 */
+        androidx.compose.runtime.key(which) {
+            val state = rememberDatePickerState(initialSelectedDateMillis = anchorMs)
+            DatePickerDialog(
+                onDismissRequest = { pickDate = null },
+                confirmButton = {
+                    TextButton(onClick = {
+                        state.selectedDateMillis?.let { ms ->
+                            val d = Instant.ofEpochMilli(ms).atZone(ZoneId.systemDefault()).toLocalDate()
+                            when (which) {
+                                "start" -> start = Dates.fmt(d)
+                                "end" -> end = Dates.fmt(d)
+                                else -> recordDate = Dates.fmt(d)
+                            }
                         }
-                    }
-                    pickDate = null
-                }) { Text("确定") }
-            },
-            dismissButton = { TextButton(onClick = { pickDate = null }) { Text("取消") } },
-        ) { DatePicker(state = state) }
+                        pickDate = null
+                    }) { Text("确定") }
+                },
+                dismissButton = { TextButton(onClick = { pickDate = null }) { Text("取消") } },
+            ) { DatePicker(state = state) }
+        }
     }
 }
 

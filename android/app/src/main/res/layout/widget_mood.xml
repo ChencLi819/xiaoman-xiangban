@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ③ 今日心情 2×2（翻页版）
+     上半区是「心情页」：插画 + 心情名 + 一句话，整页随选中的心情切换；
+     下半区是五枚翻页按钮，每枚 = 4dp 识别点 + 一个字。
+     配色规则（v1.6.4）：**文字一律次级墨**，颜色只用在那颗 4dp 圆点上，
+     选中的那档才有 accent 胶囊 + 白字 —— 原来五档各是一种文字色，整排像打翻的调色盘。
+     底图用无人物版 w_board_plain：页内已有主角插画，底图再叠人物会重复。
+     内边距 14dp（比其它方形卡少 2dp）：这张卡要塞下「插画 + 名字 + 一句话 + 翻页条」四层。 -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:id="@+id/w_root"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="center"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="@drawable/w_board_plain"
+        android:padding="14dp">
+
+        <LinearLayout
+            android:id="@+id/w_mood_page"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <ImageView
+                android:id="@+id/w_mood_art"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/mood_her_tian"
+                android:contentDescription="@null" />
+
+            <TextView
+                android:id="@+id/w_mood_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:maxLines="1"
+                android:includeFontPadding="false"
+                android:text="甜"
+                android:textColor="@color/w_ink"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/w_mood_sub"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:gravity="center"
+                android:maxLines="2"
+                android:ellipsize="end"
+                android:lineSpacingExtra="2dp"
+                android:text="甜度超标，想贴贴"
+                android:textColor="@color/w_ink2"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="26dp"
+            android:layout_marginTop="6dp"
+            android:orientation="horizontal"
+            android:baselineAligned="false">
+
+            <LinearLayout
+                android:id="@+id/w_mood_tab0"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginHorizontal="2dp"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <TextView
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:background="@drawable/w_dot_tian"
+                    android:contentDescription="@null" />
+
+                <TextView
+                    android:id="@+id/w_mood0"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:includeFontPadding="false"
+                    android:maxLines="1"
+                    android:text="甜"
+                    android:textColor="@color/w_ink2"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/w_mood_tab1"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginHorizontal="2dp"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <TextView
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:background="@drawable/w_dot_xiang"
+                    android:contentDescription="@null" />
+
+                <TextView
+                    android:id="@+id/w_mood1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:includeFontPadding="false"
+                    android:maxLines="1"
+                    android:text="想"
+                    android:textColor="@color/w_ink2"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/w_mood_tab2"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginHorizontal="2dp"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <TextView
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:background="@drawable/w_dot_lei"
+                    android:contentDescription="@null" />
+
+                <TextView
+                    android:id="@+id/w_mood2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:includeFontPadding="false"
+                    android:maxLines="1"
+                    android:text="累"
+                    android:textColor="@color/w_ink2"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/w_mood_tab3"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginHorizontal="2dp"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <TextView
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:background="@drawable/w_dot_sang"
+                    android:contentDescription="@null" />
+
+                <TextView
+                    android:id="@+id/w_mood3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:includeFontPadding="false"
+                    android:maxLines="1"
+                    android:text="丧"
+                    android:textColor="@color/w_ink2"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/w_mood_tab4"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginHorizontal="2dp"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <TextView
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:background="@drawable/w_dot_qi"
+                    android:contentDescription="@null" />
+
+                <TextView
+                    android:id="@+id/w_mood4"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:includeFontPadding="false"
+                    android:maxLines="1"
+                    android:text="气"
+                    android:textColor="@color/w_ink2"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>
