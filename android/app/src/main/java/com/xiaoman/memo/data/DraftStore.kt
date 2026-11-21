@@ -23,6 +23,8 @@ object DraftKey {
     const val RULE = "rule"
     const val CYCLE = "cycle"               // 记一次（经期区间）
     const val CYCLE_DAILY = "cycle_daily"   // 记今天状态
+    const val MEMO = "memo"                 // 点滴 · ＋ 新建（备忘 / 事件）
+    const val MEMO_EDIT = "memo_edit"       // 点滴 · 点开某条改一改
 }
 
 class DraftStore(private val context: Context) {

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ⑭ 今日一句 2×1（v1.5 六件套，v1.6.7 恢复）
+     情话按日期取，一天一句稳定不跳；点整卡进情话库换。
+     2×1 放不下页脚，故去掉了旧版的「小满 · 相伴」尾注。 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/w_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:background="@drawable/w_board_wide"
+    android:paddingStart="14dp"
+    android:paddingEnd="14dp"
+    android:paddingTop="12dp"
+    android:paddingBottom="12dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:includeFontPadding="false"
+        android:layout_marginEnd="6dp"
+        android:text="&quot;"
+        android:textColor="@color/w_accent"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/w_quote"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:maxLines="2"
+        android:ellipsize="end"
+        android:lineSpacingExtra="2dp"
+        android:text="点一下，抽一句情话"
+        android:textColor="@color/w_ink"
+        android:textSize="11sp" />
+</LinearLayout>

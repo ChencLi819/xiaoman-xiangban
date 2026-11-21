@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ⑨ 今天 2×1（v1.5 六件套，v1.6.7 恢复）
+     2×1 卡只有 148×74dp 的常规尺寸、110×70dp 的下限，
+     塞不下「标题 + 两行正文 + 按钮」三件套，所以只留两行状态，
+     整卡点进编辑器。文案已把「今天」的语义写进句子里。 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/w_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center_vertical"
+    android:background="@drawable/w_board_wide"
+    android:paddingStart="14dp"
+    android:paddingEnd="14dp"
+    android:paddingTop="12dp"
+    android:paddingBottom="12dp">
+
+    <TextView
+        android:id="@+id/w_body"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:includeFontPadding="false"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:text="TA 还没写"
+        android:textColor="@color/w_ink"
+        android:textSize="11sp" />
+
+    <TextView
+        android:id="@+id/w_sub"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:includeFontPadding="false"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:text="你已经写了 1 条"
+        android:textColor="@color/w_ink2"
+        android:textSize="10sp" />
+</LinearLayout>

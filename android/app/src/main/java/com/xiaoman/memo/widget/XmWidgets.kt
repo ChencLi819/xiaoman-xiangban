@@ -116,8 +116,9 @@ class QuoteRefreshReceiver : BroadcastReceiver() {
     }
 }
 
-/* 深链统一入口：MainActivity + Navigation deeplink */
-private fun route(ctx: Context, uri: String, rc: Int): PendingIntent = PendingIntent.getActivity(
+/* 深链统一入口：MainActivity + Navigation deeplink
+   internal 以便 LegacyWidgets.kt 复用同一套跳转（requestCode 分段，互不覆盖） */
+internal fun route(ctx: Context, uri: String, rc: Int): PendingIntent = PendingIntent.getActivity(
     ctx, rc,
     Intent(ctx, MainActivity::class.java).setData(Uri.parse(uri)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
@@ -380,9 +381,13 @@ private fun cbViews(ctx: Context, s: WidgetData.Snapshot, side: Float?): RemoteV
     return cb
 }
 
-/* 每日 00:05 日更（天数翻日 / 情话轮换）；见 XiaomanApp.scheduleWidgetDaily */
+/* 每日 00:05 日更（天数翻日 / 情话轮换）；见 XiaomanApp.scheduleWidgetDaily。
+   两代一起走：旧六件套的「今天」计数、「还有几天」倒计时、「今日一句」同样要翻日。 */
 class WidgetDailyWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx, params) {
-    override suspend fun doWork() = runCatching { renderV2(applicationContext) }.fold(
+    override suspend fun doWork() = runCatching {
+        renderV2(applicationContext)
+        renderLegacy(applicationContext)
+    }.fold(
         onSuccess = { Result.success() },
         onFailure = { Result.retry() },
     )

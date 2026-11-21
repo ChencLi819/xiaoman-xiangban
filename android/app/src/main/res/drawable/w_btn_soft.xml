@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 卡片内的次按钮（v1.6.2 起）：accent-soft 底 + accent 字。
+     主 CTA 才用 w_btn_bg（accent 实底 + 白字），一张卡最多一个。 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="10dp" />
+    <solid android:color="@color/w_accent_soft" />
+</shape>

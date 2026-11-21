@@ -358,6 +358,10 @@ ART_FIT_COMPACT = {"w_mood_art": 0.24}
 # 与 moodViews 的 compact 分支对应：小卡隐藏副文案
 HIDE_BELOW = {
     "w_mood_sub": 130.0, "w_dc_unit_l": 130.0, "w_qs_mark": 120.0, "w_cb_refresh": 175.0,
+    # v1.6.7 恢复的旧六件套：2×1「今天」在 40dp 高时只留主行；
+    # 4×2「要一起做的 / 点滴」在 110dp 高（声明下限）时收起底部按钮，三行内容才留得下。
+    # 4×2 的短边就是高度，所以 120 恰好把「声明下限 110」与「正常档 148」分开。
+    "w_sub": 48.0, "w_action": 120.0,
 }
 
 # 与 qsViews 的 setBreakStrategy(BALANCED) 对应：窄栏情话卡用平衡断行
@@ -390,6 +394,9 @@ def measure_text(node, avail_w_dp):
         node.max_lines = 3 if CUR_SIDE >= 200 else (2 if CUR_SIDE >= 170 else 1)
     if node.id == "w_qw_text":
         node.max_lines = 3 if CUR_SIDE >= 190 else 2
+    if node.id == "w_quote":
+        # 2×1 情话卡：40dp 高时只留一行（与 LegacyWidgets 的 setMaxLines 对应）
+        node.max_lines = 2 if CUR_SIDE >= 50 else 1
     size = node.tsize
     f = font(size * SCALE, node.bold)
     spacing = node.spacing
@@ -453,7 +460,9 @@ def measure(node, aw, ah):
 
     hide_below = HIDE_BELOW.get(node.id)
     if hide_below is not None and CUR_SIDE > 0 and CUR_SIDE < hide_below:
+        # 与真实 Android 对齐：View 置为 GONE 后连 margin 一起不占空间
         node.w, node.h = 0.0, 0.0
+        node.mar = (0.0, 0.0, 0.0, 0.0)
         node.lines = []
         node.text = ""
         return
@@ -808,6 +817,10 @@ def draw_shape(d, node, name):
 
 
 def draw_node(d, node):
+    # 被 HIDE_BELOW 判为 GONE 的节点（宽高已归零）什么都不画：
+    # 否则零尺寸的背景会走到 rounded_rectangle 的 x1-1 < x0 上去
+    if node.w <= 0 or node.h <= 0:
+        return
     bg = node.a.get("background")
     m = re.match(r"@drawable/(\w+)", bg or "")
     if m:

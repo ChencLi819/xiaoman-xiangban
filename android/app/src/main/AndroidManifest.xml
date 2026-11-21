@@ -144,6 +144,90 @@
                 android:resource="@xml/widget_combo_info" />
         </receiver>
 
+        <!-- ── v1.5 六件套（v1.6.7 恢复）──
+             这 6 个 provider 在 v1.6.3 被整组删除，导致系统把桌面上已放置的实例
+             一并移除（AppWidgetServiceImpl 的既有行为，App 侧拦不住）。
+             现按原类名恢复注册：既让卡片重新出现在「添加小工具」里，
+             也保证今后升级不会再被当成「提供者已下线」而清掉。 -->
+
+        <!-- ⑨ 今天 2×1 -->
+        <receiver
+            android:name=".widget.WidgetSmall"
+            android:exported="false"
+            android:label="小满 · 今天">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_small_info" />
+        </receiver>
+
+        <!-- ⑩ 要一起做的 4×2 -->
+        <receiver
+            android:name=".widget.WidgetLarge"
+            android:exported="false"
+            android:label="小满 · 要一起做的">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_large_info" />
+        </receiver>
+
+        <!-- ⑪ 说好的 4×2 -->
+        <receiver
+            android:name=".widget.WidgetLists"
+            android:exported="false"
+            android:label="小满 · 说好的">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_lists_info" />
+        </receiver>
+
+        <!-- ⑫ 还有几天 2×2 -->
+        <receiver
+            android:name=".widget.WidgetCountdown"
+            android:exported="false"
+            android:label="小满 · 还有几天">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_countdown_info" />
+        </receiver>
+
+        <!-- ⑬ 点滴 4×2 -->
+        <receiver
+            android:name=".widget.WidgetMemos"
+            android:exported="false"
+            android:label="小满 · 点滴">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_memos_info" />
+        </receiver>
+
+        <!-- ⑭ 今日一句 2×1 -->
+        <receiver
+            android:name=".widget.WidgetQuote"
+            android:exported="false"
+            android:label="小满 · 今日一句">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_quote_info" />
+        </receiver>
+
         <!-- 心情打卡无界面写库回调 -->
         <receiver
             android:name=".widget.MoodActionReceiver"

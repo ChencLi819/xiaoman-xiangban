@@ -61,16 +61,27 @@ baselineAligned、FrameLayout 居中、RelativeLayout 两端对齐），按 dp �
 （内容超框、文字被 maxLines 截断）。
 
 ```bash
-python tools/render_widget_designs.py                 # 8 张卡 × 三档尺寸（55 / 74 / 92dp 格子）+ 声明下限档
+python tools/render_widget_designs.py                 # 全部卡 × 三档尺寸（55 / 74 / 92dp 格子）+ 声明下限档
 python tools/render_widget_designs.py --only combo    # 只渲某一张
 python tools/render_widget_designs.py --scale 8       # 放大细看
 ```
 
-产物在 `build/widget-designs/`：`<widget>_<档位>.png`、`<widget>_all.png`（三档横排）、`report.txt`。
+卡名是**自动扫描** `res/layout/widget_*.xml` 得到的，新增布局不必改脚本。当前 14 张
+（八件套 + v1.5 六件套兼容层，见 [`docs/widgets-integration.md`](../docs/widgets-integration.md) §1）。
+
+产物在 `build/widget-designs/`：`<widget>_<档位>.png`、`<widget>_declared.png`、
+`<widget>_all.png`（三档横排）；**排版诊断直接 print 到 stdout，不写文件**。
 模拟器屏幕尺寸与真机、各家 launcher 的网格差异大，**卡片排版/尺寸问题以这套设计图为准**，
 结论见 [`docs/widget-design-review.md`](../docs/widget-design-review.md)。
-**出正式包前 `report.txt` 必须清零（含可达下限档）**；id 类规则（`FIT` / `HIDE_BELOW` / `maxLines`）
-一旦失效会静默变成一派假告警，改渲染器后务必抽查条数。
+**出正式包前诊断必须清零（含可达下限档）**；id 类规则（`FIT` / `HIDE_BELOW` / `maxLines`）
+一旦失效会静默变成一派假告警，改渲染器后务必抽查条数：
+
+```bash
+D:/python/python tools/render_widget_designs.py > /d/tmp/render.txt 2>&1
+grep -c '^== ' /d/tmp/render.txt      # 档数（14 张 × 3 档 + 声明下限档）
+grep -c '^   ok' /d/tmp/render.txt    # 应为「档数」条，且
+grep -c -E '^   \[' /d/tmp/render.txt # 必须为 0
+```
 
 ## gen_widget_boards.py
 

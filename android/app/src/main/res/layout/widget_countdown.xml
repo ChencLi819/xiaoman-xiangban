@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ⑫ 还有几天 2×2（v1.5 六件套，v1.6.7 恢复）
+     外层 FrameLayout 铺满格子并居中卡片（与 v1.6 方形卡同构）。
+     空态不再用 30sp「—」（在卡上就是一根红杠，且 previewLayout 会照抄），
+     默认文案给示例值；代码空态给「暂无」并缩到 18sp（见 LegacyWidgets）。 -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:id="@+id/w_root"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="center"
+        android:orientation="vertical"
+        android:gravity="center_vertical"
+        android:background="@drawable/w_board_square"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/w_cd_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:includeFontPadding="false"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:text="最近的约定"
+            android:textColor="@color/w_ink2"
+            android:textSize="10sp"
+            android:letterSpacing="0.06" />
+
+        <TextView
+            android:id="@+id/w_days"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:includeFontPadding="false"
+            android:text="23 天"
+            android:textColor="@color/w_accent"
+            android:textSize="30sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/w_title"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_marginTop="2dp"
+            android:maxLines="2"
+            android:ellipsize="end"
+            android:lineSpacingExtra="2dp"
+            android:text="去看海 · 09:00"
+            android:textColor="@color/w_ink"
+            android:textSize="11sp" />
+    </LinearLayout>
+</FrameLayout>

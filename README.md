@@ -204,7 +204,7 @@ sdk.dir=<你的本机 Android SDK 路径>
 │       │   ├── components/      # 通用卡片 / chips / 翻卡动画
 │       │   ├── nav/             # 5 Tab + 子路由 + 深链
 │       │   └── screens/         # 各功能页
-│       ├── widget/              # 8 个桌面小部件（2×2 / 4×2 / 4×1 / 3×3）
+│       ├── widget/              # 14 个桌面小部件（八件套 + v1.5 六件套兼容层）
 │       └── remind/              # 通知 channel + 每日提醒 Worker
 ├── docs/
 │   ├── technical.md             # 架构与关键实现取舍

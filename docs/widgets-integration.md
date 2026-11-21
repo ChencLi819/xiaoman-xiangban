@@ -6,7 +6,26 @@
 
 ---
 
+## 0. 现役实现状态（v1.6.7）
+
+本文 §1–§8 是**最初的设计稿**，落地时有两处偏离，看代码前先读这段：
+
+| 项 | 设计稿 | 实际实现 |
+| --- | --- | --- |
+| 技术方案 | Glance（Compose for AppWidget） | **传统 `RemoteViews` + XML 布局**（`widget/XmWidgets.kt` + `res/layout/widget_*.xml`）。工程里没有引入 Glance 依赖 |
+| 组件数量 | 8 个 | **14 个**：v1.6 八件套 + v1.5 六件套兼容层（`widget/LegacyWidgets.kt`） |
+
+**为什么保留 v1.5 六件套**：v1.6.3 曾把旧六件套的 6 个 provider 从清单里整组删掉，系统重新扫描清单后按平台规则把桌面上对应的已放置实例一并移除（`AppWidgetServiceImpl` 的内建行为，App 侧拦不住），用户升级后发现卡片消失。v1.6.7 把 6 个 provider **原样注册回来**——
+
+- **类名必须与 v1.5 逐字一致**（`WidgetSmall` / `WidgetLarge` / `WidgetLists` / `WidgetCountdown` / `WidgetMemos` / `WidgetQuote`）。系统按 **ComponentName（包名 + 类名）** 认领实例，改名即视为新部件，旧实例照样找不回来。
+- 布局与视觉按 v1.6 的统一规范重做（纸面底图 `w_board_*`、单一强调色 `w_accent`、字号阶梯），所以恢复回来的卡片与八件套并排不割裂。
+- 两代卡片共用刷新入口：`WidgetUpdater.updateAll()` 与每日 `WidgetDailyWorker` 都同时调 `renderV2()` + `renderLegacy()`。
+
+> **改 provider 类名或删 `<receiver>` 前务必想清楚**：任何一次「清理旧部件」的动作都会让用户桌面上已有的实例消失，且无法通过 App 侧代码恢复。真要下线某个部件，宁可在 UI 上不引导用户添加，也不要删清单声明。
+
 ## 1. 组件清单
+
+### 1.1 八件套（v1.6 起，现役主力）
 
 | # | 组件 | 尺寸(dp) | AppWidget minWidth×minHeight | 数据来源 | 点击行为 |
 |---|------|---------|------------------------------|----------|----------|
@@ -19,8 +38,23 @@
 | ⑦ | 雨过翻一篇 | 4×1 | 250×70 | 雨过池（2600 条） | → 雨过浏览 PoolBrowseScreen |
 | ⑧ | 相伴大卡 | 4×3 | 250×180 | ①②④聚合 | 四个入口分别路由到写日记 / 记心情 / 抽情话 / 雨过 |
 
+### 1.2 六件套兼容层（v1.5 遗留，v1.6.7 恢复注册）
+
+| # | 组件 | 类名 | 尺寸 | minWidth×minHeight | 说明 |
+|---|------|------|------|--------------------|------|
+| ⑨ | 今天 | `WidgetSmall` | 2×1 | 110×40 | TA 今天写了没 / 我写了多少；40dp 高时收起副行 |
+| ⑩ | 要一起做的 | `WidgetLarge` | 4×2 | 250×110 | 共同待办三行 + 周期相位；110dp 高时收起按钮 |
+| ⑪ | 说好的 | `WidgetLists` | 4×2 | 250×110 | 清单进度 + 前几件没勾的事 |
+| ⑫ | 还有几天 | `WidgetCountdown` | 2×2 | 110×110 | 最近的约定还剩几天 |
+| ⑬ | 点滴 | `WidgetMemos` | 4×2 | 250×110 | 最近记下的三条 + 「＋ 记一条」 |
+| ⑭ | 今日一句 | `WidgetQuote` | 2×1 | 110×40 | 每天换一句情话（两行内截断） |
+
+> 六件套**只做兼容，不再新增**：新功能一律进八件套。它们的布局与渲染在 `widget/LegacyWidgets.kt`，
+> 与 `XmWidgets.kt` 共用 `squareSide` / `fitScale` / `route` / `WidgetData`。
+
 > minWidth/minHeight 按系统公式 `70×n − 30` 估算，`targetCellWidth/Height`（API 31+）直接填 n×m。
 > `previewLayout`（API 31+）指向对应布局实现选择器实时预览；低版本用 `previewImage`。
+> 六件套用的是 `previewLayout`（不是 `previewImage`），所以恢复它们不存在「缺预览图」的风险。
 
 ## 2. 视觉规范
 

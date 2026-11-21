@@ -42,6 +42,13 @@ class DraftHandle internal constructor(
         vm.clearDraft(key)
     }
 
+    /** 同 finish() 的清理，但 handle 还能接着用。
+     *  页面内的浮层（如「点滴 · ＋ 新建」）不像独立编辑页那样保存完就离开组合，
+     *  同一个 handle 会被反复打开使用；用 finish() 会把它永久锁死，第二次就再也存不下草稿。 */
+    fun discard() {
+        vm.clearDraft(key)
+    }
+
     /** 落草稿；返回 true = 确实存下了内容（页面据此提示「已存草稿」） */
     fun flush(dirty: Boolean, json: JSONObject?): Boolean {
         if (finished) return false

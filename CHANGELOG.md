@@ -2,13 +2,27 @@
 
 遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 与[语义化版本](https://semver.org/lang/zh-CN/)。
 
-`versionName` 在 [`android/app/build.gradle.kts`](android/app/build.gradle.kts)（当前 **1.6.6**，`versionCode` 22）；数据库 schema 版本在 [`Database.kt`](android/app/src/main/java/com/xiaoman/memo/data/Database.kt)（当前 **v8**）。
+`versionName` 在 [`android/app/build.gradle.kts`](android/app/build.gradle.kts)（当前 **1.6.7**，`versionCode` 23）；数据库 schema 版本在 [`Database.kt`](android/app/src/main/java/com/xiaoman/memo/data/Database.kt)（当前 **v8**）。
 
 > 本仓库开源时把开发过程历史压缩成了初始提交，**v1.0–v1.4.0 的记录是从存档资料回填的**，粒度不如此后版本准确；v1.4.1–v1.4.7 的中间迭代没有留下独立记录，统一归入下方「v1.4.x」。
 
 ## Unreleased
 
 （暂无）
+
+## v1.6.7
+
+> 这版没有新功能，修两处「升级后才暴露」的问题：升级后旧卡片从桌面消失、「点滴」新建内容不自动保存。
+
+### Fixed
+
+- **升级到 v1.6.3 及以上，桌面上的旧六件套卡片会消失**。Android 的桌面卡片由系统按 App 的清单声明管理：v1.6.3 把旧六件套（今天 / 要一起做的 / 说好的 / 还有几天 / 点滴 / 今日一句）的 6 个 provider 从清单里整组删掉了，系统在升级后重新扫描清单，发现这些 provider 已不存在，就按平台规则把桌面上对应的所有已放置实例一并移除——这是 `AppWidgetServiceImpl` 的内建行为，App 侧没有 API 能拦住。
+  - 现在把这 6 个 provider **原样注册回来**（类名与 v1.5 逐字一致，系统才能按 ComponentName 认回旧实例），并让每日刷新链路同时带上两代卡片。升级后桌面上原有的旧卡片会**自动恢复显示**，不需要重新添加。
+  - 六张旧卡的版式与配色已按 v1.6 的统一视觉规范重做（纸面底图、单一强调色、字号阶梯），与八件套并排放在一起不再割裂。
+- **「点滴」的新建与编辑没有自动保存**。v1.6.6 给六个编辑页加了草稿，但漏掉了「点滴」——它和别的页面不一样：新建 / 查看都是**页面里的浮层**（点外面或点「取消」就关），没有「退出页面」这个时机，所以既没草稿也没兜底。
+  - 现在新建写到一半关掉会留一份草稿，下次点「＋ 新建」自动接着写；点开某条改到一半关掉同样留着，下次打开那条继续。正式保存后草稿清掉。
+  - 表单状态一并升级为可跨系统重建保存，改字号 / 分屏不再丢字。
+  - 草稿的清理分两种语义：独立编辑页保存后调 `finish()`（清理并锁死，页面随即离开）；「点滴」这类会被反复打开的浮层调 `discard()`（只清理，handle 留着继续用）——用错会让浮层第二次打开就存不下草稿。
 
 ## v1.6.6
 
