@@ -33,7 +33,7 @@ app/src/main/java/com/xiaoman/memo/
 │   ├── components/# 卡片 / chips / 勾选框 / 翻卡动画等通用组件
 │   ├── nav/       # 5 Tab + 全部子路由 + xiaoman:// 深链
 │   └── screens/   # 各功能页
-├── widget/        # 8 个桌面小部件（2×2 / 4×2 / 4×1 / 3×3，RemoteViews）
+├── widget/        # 14 个桌面小部件（八件套 + v1.5 六件套兼容层，RemoteViews）
 └── remind/        # 通知 channel + 每日提醒 Worker
 ```
 

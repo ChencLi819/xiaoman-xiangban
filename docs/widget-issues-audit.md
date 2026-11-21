@@ -3,9 +3,14 @@
 > 审查范围：`android/app/src/main` 下 `widget/`（Kotlin）、`res/layout/widget_*.xml`（当时 14 张）、
 > `res/xml/widget_*_info.xml`（当时 14 份）、`AndroidManifest.xml` 注册、`XiaomanApp.kt` 调度。
 >
-> **v1.6.3 状态**：第 2、3 项已执行 —— 旧六件套整组删除，现役 8 张卡 / 8 份 info / 8 个 receiver；
+> **v1.6.3 状态**：第 2、3 项已执行 —— 旧六件套从清单里删除，当时现役 8 张卡 / 8 份 info / 8 个 receiver；
 > `WidgetUpdater.updateAll()` 只调 `renderV2()`，不再有无条件更新。第 1 项（`onUpdate` 里 `runBlocking`）
 > 仍未处理，八件套同样存在主线程查库的 ANR 风险。
+>
+> **v1.6.7 更正**：上面的「整组删除」**是个错误决定**——删 provider 会让用户桌面上已放置的实例被系统
+> 一并移除，且 App 侧无 API 可拦。六件套已**原样注册回来**（类名逐字一致），现役 **14 张卡 / 14 份 info /
+> 14 个 receiver**，`updateAll()` 改为两代一起刷。详见 [`widgets-integration.md`](widgets-integration.md) §0。
+> 第 1 项（`onUpdate` 主线程 `runBlocking`）**六件套同样继承**，未处理。
 > 结论分三档：**P0 会崩/功能不生效**、**P1 明显体验缺陷**、**P2 打磨项**。
 
 ---

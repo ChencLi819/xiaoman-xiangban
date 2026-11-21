@@ -4,10 +4,12 @@
 所以卡片的排版 / 尺寸问题**不靠模拟器判定**，改用离线渲染：
 
 ```bash
-python tools/render_widget_designs.py                 # 8 张卡片 × 三档尺寸（v1.6.3 起）
+python tools/render_widget_designs.py                 # 全部卡片 × 三档尺寸（v1.6.3 起；v1.6.7 起 14 张）
 python tools/render_widget_designs.py --only combo    # 只渲某一张
 python tools/render_widget_designs.py --scale 8       # 放大细看
 ```
+
+卡名**自动扫描** `res/layout/widget_*.xml`，新增布局不必改脚本。
 
 - 直接解析 `res/layout/widget_*.xml` 与 `res/xml/widget_*_info.xml`，用真实字体度量做
   measure / layout（LinearLayout 权重与 gravity、baselineAligned、FrameLayout 居中、
@@ -15,7 +17,8 @@ python tools/render_widget_designs.py --scale 8       # 放大细看
 - 尺寸按「格子 × 格数」推，正方形卡取 `min(宽,高)`，与 `applySquareSize` 的口径一致；
 - 三档格子边长：**55dp**（老版本 aapt 最小值）、**74dp**（现代手机常见）、**92dp**（大屏 / 平板）；
 - 同时打印排版诊断：内容超框、文字被 `maxLines` 截断、按实例缩放后的字号。
-- 输出：`build/widget-designs/<widget>_<档位>.png`、`<widget>_all.png`（三档横排）、`report.txt`。
+- 输出：`build/widget-designs/<widget>_<档位>.png`、`<widget>_declared.png`、`<widget>_all.png`（三档横排）；
+  **排版诊断直接打印到 stdout，不写 `report.txt`**。
 
 ## 查出并修掉的问题
 
@@ -36,15 +39,21 @@ python tools/render_widget_designs.py --scale 8       # 放大细看
 
 - **相伴大卡**：边长 < 200dp（3 格 × 67dp 以下）时情话区放不下 3 行，正文会被裁；
   现代手机 3 格实测约 220–280dp，正常不会触发。若要在 165dp 也完整显示，需要在该尺寸下隐藏四入口行。
-- **4×2 / 2×1 遗留卡（v1.5 五件套）**：格子 55dp（即 220×110dp、110×55dp）时内容放不下；
-  这个档位对应 220dp 宽的屏幕，实际设备（4 列 ≈ 290dp 起）不会出现，74dp 档位下已全部为 ok。
+- ~~4×2 / 2×1 遗留卡（v1.5 五件套）：格子 55dp 时内容放不下~~ —— **v1.6.7 已消除**：六件套的布局
+  按 v1.6 规范重做（顶栏收进进度 / 提示，三行列表 + 可选按钮），并加了 `HIDE_BELOW` 规则
+  （`w_sub < 48`、`w_action < 120` 时按 `GONE` 收起）。现在 56 档全 ok，上面这条边界不再成立。
 
 ## 复现与验收
 
 ```bash
-python tools/render_widget_designs.py
-# report.txt 中除上面「已知边界」两条外，不应再出现 overflow / clip
+D:/python/python tools/render_widget_designs.py > /d/tmp/render.txt 2>&1
+# 除上面「已知边界」两条外，输出里不应再出现 [overflow] / [clip]
+grep -c '^== ' /d/tmp/render.txt       # 档数
+grep -c -E '^   \[' /d/tmp/render.txt  # 必须为 0
 ```
+
+> `python` 与 `D:/python/python` 的区别：系统默认的 `python` **没有 Pillow**，
+> 渲染脚本必须用后者跑。
 
 ## 卡面与圆角（v1.6.2 补充）
 

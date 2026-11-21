@@ -85,14 +85,14 @@ grep -c -E '^   \[' /d/tmp/render.txt # 必须为 0
 
 ## gen_widget_boards.py
 
-生成 8 张卡片的**卡面位图**与「添加小工具」面板的预览图，共 15 个文件（全部落在
+生成卡片的**卡面底图**与「添加小工具」面板的预览图，共 15 个文件（全部落在
 `res/drawable-nodpi/`）：
 
 | 产出 | 数量 | 用途 |
 | --- | --- | --- |
-| `w_board_{square,big,wide,plain,slim2}.webp` | 5 | 布局里的卡面底图（AI 纸面纹理 + 白纱 + 细线框 + 圆角烘进 alpha） |
+| `w_board_{square,big,wide,plain,slim2}.webp` | 5 | 布局里的卡面底图（AI 纸面纹理 + 白纱 + 细线框 + 圆角烘进 alpha）；**14 张卡共用这 5 张** |
 | `w_face_{her,him}.webp` | 2 | 3×3 顶栏的圆形头像 |
-| `widget_preview_*.webp` | 8 | 「添加小工具」面板预览图 |
+| `widget_preview_*.webp` | 8 | 「添加小工具」面板预览图（**只有八件套有**；六件套用的是 `previewLayout`，不需要预览图） |
 
 ```bash
 python tools/gen_widget_boards.py

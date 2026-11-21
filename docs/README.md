@@ -10,7 +10,7 @@
 | [`troubleshooting.md`](troubleshooting.md) | 故障排查：同步自查清单、错误提示对照、数据恢复、构建问题 |
 | [`migration.md`](migration.md) | debug 版 ↔ 正式版的数据保留方案：覆盖安装、降级边界、完整迁移包 |
 | [`signing-keys.md`](signing-keys.md) | 签名密钥清单：两把钥匙的指纹、切换开关、换机时怎么带 |
-| [`widgets-integration.md`](widgets-integration.md) | 桌面小部件接入说明：8 张卡的清单、数据来源、刷新时机与广播回调 |
+| [`widgets-integration.md`](widgets-integration.md) | 桌面小部件接入说明：14 张卡的清单（八件套 + v1.5 六件套兼容层）、数据来源、刷新时机与广播回调 |
 | [`widget-design-review.md`](widget-design-review.md) | 卡片排版/尺寸验收：三档格子离线渲染结果与逐条修复记录 |
 | [`widget-issues-audit.md`](widget-issues-audit.md) | 卡片问题审计：逐卡问题清单与判定依据 |
 | [`widget-visual-audit.md`](widget-visual-audit.md) | 卡片视觉规范审计：内距 / 字号阶梯 / 配色铁律的落实核对 |
